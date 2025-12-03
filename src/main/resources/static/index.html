@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>农家乐预订平台 - 登录</title>
+  <link rel="stylesheet" href="/css/login.css">
+</head>
+
+<body>
+  <div id="login-app" class="login-shell">
+    <h1>欢迎来到农家乐系统</h1>
+    <p>灵活切换游客或经营者身份，即刻管理预订与接待任务。</p>
+
+    <form @submit.prevent="handleLogin">
+      <div class="form-group">
+        <label for="username">账号</label>
+        <input id="username" v-model="form.username" type="text" placeholder="请输入账号" autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label for="password">密码</label>
+        <input id="password" v-model="form.password" type="password" placeholder="输入密码" autocomplete="current-password" />
+      </div>
+      <div class="form-group">
+        <label for="userType">身份</label>
+        <select id="userType" v-model="form.userType">
+          <option value="" disabled>请选择身份</option>
+          <option value="visitor">游客</option>
+          <option value="operator">经营者</option>
+        </select>
+      </div>
+      <button class="btn-submit" type="submit" :disabled="loading">
+        <span v-if="!loading">登录</span>
+        <span v-else>请求中...</span>
+      </button>
+    </form>
+
+    <div v-if="status.message" class="status" :class="status.type">
+      {{ status.message }}
+    </div>
+
+    <div class="login-footer">
+      <span>安全连接 · 轻松预订</span>
+      <span v-if="tokenInfo">令牌剩余 {{ tokenInfo.expire }} 秒</span>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          form: {
+            username: "",
+            password: "",
+            userType: "",
+          },
+          status: {
+            message: "",
+            type: ""
+          },
+          loading: false,
+          tokenInfo: null
+        };
+      },
+      methods: {
+        async handleLogin() {
+          if (!this.form.username || !this.form.password || !this.form.userType) {
+            this.setStatus("请填写完整信息再提交", "error");
+            return;
+          }
+          this.loading = true;
+          this.setStatus("", "");
+          try {
+            const response = await fetch("/api/auth/login", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(this.form)
+            });
+            const payload = await response.json();
+            if (!response.ok) {
+              throw new Error(payload.message || "登录失败");
+            }
+            this.tokenInfo = payload.data;
+            this.setStatus("登录成功，令牌已经准备就绪", "success");
+          } catch (error) {
+            this.setStatus(error.message || "登录请求发生错误", "error");
+          } finally {
+            this.loading = false;
+          }
+        },
+        setStatus(message, type) {
+          this.status.message = message;
+          this.status.type = type;
+        }
+      }
+    }).mount("#login-app");
+  </script>
+</body>
+
+</html>

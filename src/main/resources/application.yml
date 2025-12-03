@@ -3,3 +3,6 @@ spring:
     url: jdbc:mysql://localhost:3306/farmstay_db
     username: root
     password: Coldplay789
+sa-token:
+  token-name: farmstay-token
+  timeout: 1800
