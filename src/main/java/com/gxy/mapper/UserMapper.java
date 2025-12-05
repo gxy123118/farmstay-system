@@ -17,6 +17,9 @@ public interface UserMapper {
             "WHERE username = #{username} AND user_type = #{userType} LIMIT 1")
     User selectByUsernameAndType(@Param("username") String username, @Param("userType") String userType);
 
+    @Select("SELECT COUNT(*) FROM user_account WHERE user_type = #{userType} AND status = 'ACTIVE'")
+    long countByUserType(@Param("userType") String userType);
+
     @Insert("INSERT INTO user_account(username, password, salt, display_name, user_type, status, created_at, updated_at) " +
             "VALUES(#{username}, #{password}, #{salt}, #{displayName}, #{userType}, #{status}, NOW(), NOW())")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
