@@ -10,7 +10,7 @@ public class PasswordUtil {
     }
 
     /**
-     * 使用盐值验证密码
+     * 使用盐值校验密码
      */
     public static boolean matches(String rawPassword, String salt, String encodedPassword) {
         String merged = rawPassword + Optional.ofNullable(salt).orElse("");

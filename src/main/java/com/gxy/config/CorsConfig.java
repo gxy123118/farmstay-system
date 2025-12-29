@@ -13,18 +13,17 @@ public class CorsConfig {
 
     @Bean
     public CorsFilter corsFilter() {
-        // 设置 CORS 配置
+        // CORS 配置
         CorsConfiguration config = new CorsConfiguration();
         config.addAllowedMethod("*");
         config.setAllowCredentials(true);
-        // todo 实际改为线上真实域名、本地域名
+        // TODO: 上线时替换为可信任的域名/环境
         config.setAllowedOriginPatterns(Arrays.asList("*"));
         config.addAllowedHeader("*");
 
-        // 设置 URL 路径与 CORS 配置的映射关系
+        // URL 路径与 CORS 配置的映射
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config); // 配置所有路径
-        // 返回一个新的 CorsFilter 实例
+        source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
 }

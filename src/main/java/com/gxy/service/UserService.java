@@ -7,7 +7,7 @@ import com.gxy.model.dto.RegisterRequest;
 public interface UserService {
 
     /**
-     * 登录并返回 Sa-Token 令牌信息
+     * 登录并返回 Sa-Token 信息
      */
     LoginResponse login(LoginRequest request);
 

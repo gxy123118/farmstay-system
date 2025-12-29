@@ -1,8 +1,15 @@
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/farmstay_db
+    url: jdbc:mysql://8.140.224.10:3306/farmstay_db
     username: root
-    password: Coldplay789
+    password: 123456
 sa-token:
   token-name: farmstay-token
   timeout: 1800
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs

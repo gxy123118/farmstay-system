@@ -20,7 +20,7 @@ import javax.validation.Valid;
 import java.util.List;
 
 /**
- * 农家乐信息对外接口，游客/经营者可查看、经营者可创建/更新
+ * 农家乐信息对外接口，游客/经营者可查询，经营者可创建/更新
  */
 @RestController
 @RequestMapping("/api/farmstays")
@@ -31,7 +31,7 @@ public class FarmStayController {
     private final FarmStayService farmStayService;
 
     /**
-     * 查询农家乐列表，可按城市/关键字筛选
+     * 查询农家乐列表，可按城市/关键词/价格等级/标签筛选
      */
     @GetMapping
     public ApiResponse<List<FarmStayResponse>> list(@RequestParam(required = false) String city,

@@ -5,7 +5,7 @@ import lombok.Data;
 import javax.validation.constraints.NotBlank;
 
 /**
- * 创建/更新农家乐请求
+ * 创建/更新农家乐请求体
  */
 @Data
 public class FarmStayRequest {

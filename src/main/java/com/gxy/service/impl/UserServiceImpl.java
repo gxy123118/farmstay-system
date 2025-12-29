@@ -52,7 +52,7 @@ public class UserServiceImpl implements UserService {
         User user = new User();
         user.setUsername(request.getUsername());
         user.setSalt(salt);
-        user.setDisplayName(request.getDisplayName());
+        user.setDisplayName(Optional.ofNullable(request.getDisplayName()).orElse(request.getUsername()));
         user.setUserType(userType.getCode());
         user.setStatus("ACTIVE");
         user.setPassword(PasswordUtil.hashWithSalt(request.getPassword(), salt));

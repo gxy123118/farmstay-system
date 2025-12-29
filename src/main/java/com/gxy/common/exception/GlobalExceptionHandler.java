@@ -16,7 +16,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
     public ApiResponse<Void> handleBusinessException(BusinessException ex) {
-        log.warn("业务异常：{}", ex.getMessage());
+        log.warn("业务异常: {}", ex.getMessage());
         return new ApiResponse<>(ex.getCode(), ex.getMessage(), null);
     }
 
@@ -28,13 +28,13 @@ public class GlobalExceptionHandler {
         } else if (ex instanceof BindException) {
             message = ((BindException) ex).getBindingResult().getAllErrors().get(0).getDefaultMessage();
         }
-        log.warn("参数异常：{}", message);
+        log.warn("参数异常: {}", message);
         return ApiResponse.fail(message);
     }
 
     @ExceptionHandler(Exception.class)
     public ApiResponse<Void> handleException(Exception ex) {
-        log.error("系统异常：", ex);
+        log.error("系统异常", ex);
         return ApiResponse.fail("系统繁忙，请稍后重试");
     }
 }

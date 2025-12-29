@@ -13,7 +13,7 @@ public interface FarmStayService {
     List<FarmStayResponse> list(String city, String keyword, String priceLevel, String tag);
 
     /**
-     * 依据编号查看农家乐详情
+     * 根据编号查看农家乐详情
      */
     FarmStayResponse detail(Long id);
 
