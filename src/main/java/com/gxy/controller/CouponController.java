@@ -26,7 +26,6 @@ public class CouponController {
     /**
      * 经营者创建或上架优惠券
      */
-    @SaCheckLogin
     @PostMapping
     public ApiResponse<CouponResponse> create(@Valid @RequestBody CouponRequest request) {
         return ApiResponse.ok(couponService.create(request));

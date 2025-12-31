@@ -5,7 +5,7 @@ spring:
     password: 123456
 sa-token:
   token-name: farmstay-token
-  timeout: 1800
+  timeout: 180
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
@@ -13,3 +13,7 @@ springdoc:
     operations-sorter: alpha
   api-docs:
     path: /v3/api-docs
+logging:
+  level:
+    com.gxy: debug
+

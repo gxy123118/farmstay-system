@@ -34,7 +34,6 @@ public class RoomController {
     /**
      * 经营者创建房型
      */
-    @SaCheckLogin
     @PostMapping
     public ApiResponse<RoomResponse> create(@Valid @RequestBody RoomRequest request) {
         return ApiResponse.ok(roomService.create(request));
@@ -43,7 +42,6 @@ public class RoomController {
     /**
      * 经营者更新房型
      */
-    @SaCheckLogin
     @PutMapping("/{id}")
     public ApiResponse<RoomResponse> update(@PathVariable Long id, @Valid @RequestBody RoomRequest request) {
         return ApiResponse.ok(roomService.update(id, request));

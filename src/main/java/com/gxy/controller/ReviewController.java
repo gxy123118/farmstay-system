@@ -26,7 +26,6 @@ public class ReviewController {
     /**
      * 游客提交评价
      */
-    @SaCheckLogin
     @PostMapping
     public ApiResponse<ReviewResponse> create(@Valid @RequestBody ReviewRequest request) {
         return ApiResponse.ok(reviewService.createReview(request));
@@ -43,7 +42,6 @@ public class ReviewController {
     /**
      * 经营者审核评价
      */
-    @SaCheckLogin
     @PutMapping("/{id}/status")
     public ApiResponse<ReviewResponse> moderate(@PathVariable Long id, @RequestParam String status) {
         return ApiResponse.ok(reviewService.moderate(id, status));

@@ -1,5 +1,6 @@
 package com.gxy.common.exception;
 
+import cn.dev33.satoken.exception.NotLoginException;
 import com.gxy.common.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.BindException;
@@ -30,6 +31,12 @@ public class GlobalExceptionHandler {
         }
         log.warn("参数异常: {}", message);
         return ApiResponse.fail(message);
+    }
+
+    @ExceptionHandler(NotLoginException.class)
+    public ApiResponse<Void> handleNotLogin(NotLoginException ex) {
+        log.warn("未登录或登录态失效: {}", ex.getMessage());
+        return new ApiResponse<>(401, "登录已失效，请重新登录", null);
     }
 
     @ExceptionHandler(Exception.class)

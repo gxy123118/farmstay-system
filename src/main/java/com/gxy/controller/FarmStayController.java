@@ -1,6 +1,7 @@
 package com.gxy.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.annotation.SaCheckRole;
 import com.gxy.common.ApiResponse;
 import com.gxy.model.dto.FarmStayRequest;
 import com.gxy.model.dto.FarmStayResponse;
@@ -33,7 +34,7 @@ public class FarmStayController {
     /**
      * 查询农家乐列表，可按城市/关键词/价格等级/标签筛选
      */
-    @GetMapping
+    @GetMapping("/search")
     public ApiResponse<List<FarmStayResponse>> list(@RequestParam(required = false) String city,
                                                     @RequestParam(required = false) String keyword,
                                                     @RequestParam(required = false) String priceLevel,
@@ -52,7 +53,6 @@ public class FarmStayController {
     /**
      * 经营者创建农家乐
      */
-    @SaCheckLogin
     @PostMapping
     public ApiResponse<FarmStayResponse> create(@Valid @RequestBody FarmStayRequest request) {
         return ApiResponse.ok(farmStayService.create(request));
@@ -61,7 +61,6 @@ public class FarmStayController {
     /**
      * 经营者更新本身的农家乐信息
      */
-    @SaCheckLogin
     @PutMapping("/{id}")
     public ApiResponse<FarmStayResponse> update(@PathVariable Long id, @Valid @RequestBody FarmStayRequest request) {
         return ApiResponse.ok(farmStayService.update(id, request));

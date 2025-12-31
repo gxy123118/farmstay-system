@@ -33,13 +33,11 @@ public class BookingController {
 
     private final BookingService bookingService;
 
-    @SaCheckLogin
     @PostMapping
     public ApiResponse<BookingResponse> create(@Valid @RequestBody BookingRequest request) {
         return ApiResponse.ok(bookingService.createOrder(request));
     }
 
-    @SaCheckLogin
     @PostMapping("/{orderId}/cancel")
     public ApiResponse<BookingResponse> cancel(@PathVariable Long orderId) {
         return ApiResponse.ok(bookingService.cancel(orderId));
@@ -48,7 +46,6 @@ public class BookingController {
     /**
      * 支付接口框架（模拟支付成功）
      */
-    @SaCheckLogin
     @PostMapping("/pay")
     public ApiResponse<PaymentResponse> pay(@Valid @RequestBody PaymentRequest request) {
         return ApiResponse.ok(bookingService.pay(request));
@@ -57,7 +54,6 @@ public class BookingController {
     /**
      * 经营者更新订单状态（确认/完结/退款等）
      */
-    @SaCheckLogin
     @PutMapping("/status")
     public ApiResponse<BookingResponse> updateStatus(@Valid @RequestBody OrderStatusUpdateRequest request) {
         return ApiResponse.ok(bookingService.updateStatus(request));
@@ -66,7 +62,6 @@ public class BookingController {
     /**
      * 游客查看自己的订单
      */
-    @SaCheckLogin
     @GetMapping("/mine")
     public ApiResponse<List<BookingResponse>> myOrders() {
         return ApiResponse.ok(bookingService.listMyOrders());
@@ -75,7 +70,6 @@ public class BookingController {
     /**
      * 经营者查看名下订单
      */
-    @SaCheckLogin
     @GetMapping
     public ApiResponse<List<BookingResponse>> ownerOrders(@RequestParam Long farmStayId) {
         return ApiResponse.ok(bookingService.listOwnerOrders(farmStayId));

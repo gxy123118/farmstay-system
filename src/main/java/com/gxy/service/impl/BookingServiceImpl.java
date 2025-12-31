@@ -151,13 +151,13 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private void enforceVisitor() {
-        if (!Objects.equals(UserType.VISITOR.getCode(), StpUtil.getLoginType())) {
+        if (!Objects.equals(UserType.VISITOR.getCode(), StpUtil.getSession().get("userType"))) {
             throw new BusinessException("仅游客可执行该操作");
         }
     }
 
     private void enforceOperator() {
-        if (!Objects.equals(UserType.OPERATOR.getCode(), StpUtil.getLoginType())) {
+        if (!Objects.equals(UserType.OPERATOR.getCode(), StpUtil.getSession().get("userType"))) {
             throw new BusinessException("仅经营者可执行该操作");
         }
     }
