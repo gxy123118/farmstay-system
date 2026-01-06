@@ -2,6 +2,7 @@ package com.gxy.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.IdUtil;
+import com.gxy.common.auth.AuthGuard;
 import com.gxy.common.exception.BusinessException;
 import com.gxy.mapper.CouponMapper;
 import com.gxy.mapper.FarmStayMapper;
@@ -9,7 +10,6 @@ import com.gxy.model.dto.CouponRequest;
 import com.gxy.model.dto.CouponResponse;
 import com.gxy.model.entity.Coupon;
 import com.gxy.model.entity.FarmStay;
-import com.gxy.model.enums.UserType;
 import com.gxy.service.CouponService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,7 +29,7 @@ public class CouponServiceImpl implements CouponService {
 
     @Override
     public CouponResponse create(CouponRequest request) {
-        enforceOperator();
+        AuthGuard.enforceOperator();
         Coupon coupon = new Coupon();
         coupon.setCode(IdUtil.simpleUUID());
         coupon.setTitle(request.getTitle());
@@ -85,12 +85,6 @@ public class CouponServiceImpl implements CouponService {
         boolean countValid = coupon.getUsedCount() < coupon.getTotalCount();
         boolean scopeValid = coupon.getFarmStayId() == null || Objects.equals(coupon.getFarmStayId(), farmStayId);
         return timeValid && statusValid && countValid && scopeValid;
-    }
-
-    private void enforceOperator() {
-        if (!Objects.equals(UserType.OPERATOR.getCode(), StpUtil.getLoginType())) {
-            throw new BusinessException("仅经营者可创建优惠券");
-        }
     }
 
     private void validateOwner(Long farmStayId) {

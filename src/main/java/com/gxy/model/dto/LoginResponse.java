@@ -12,4 +12,6 @@ public class LoginResponse {
     private String loginType;
 
     private Long expire;
+
+    private Long userId;
 }

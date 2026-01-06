@@ -19,8 +19,6 @@ public class ReviewResponse {
 
     private String content;
 
-    private String status;
-
     private String visitorName;
 
     private Date createdAt;

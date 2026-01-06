@@ -53,10 +53,10 @@ CREATE TABLE IF NOT EXISTS review (
   visitor_id BIGINT NOT NULL,
   rating INT NOT NULL,
   content TEXT,
-  status VARCHAR(16) NOT NULL DEFAULT 'PENDING',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_review_farm (farm_stay_id),
+  UNIQUE KEY uk_review_order (order_id),
   CONSTRAINT fk_review_order FOREIGN KEY (order_id) REFERENCES booking_order (id),
   CONSTRAINT fk_review_visitor FOREIGN KEY (visitor_id) REFERENCES user_account (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='游客评价';

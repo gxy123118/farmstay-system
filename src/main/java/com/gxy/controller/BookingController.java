@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.gxy.common.ApiResponse;
 import com.gxy.model.dto.BookingRequest;
 import com.gxy.model.dto.BookingResponse;
+import com.gxy.model.vo.BookingDetailVo;
 import com.gxy.model.dto.OrderStatusUpdateRequest;
 import com.gxy.model.dto.PaymentRequest;
 import com.gxy.model.dto.PaymentResponse;
@@ -44,6 +45,14 @@ public class BookingController {
     }
 
     /**
+     * 游客申请退款（模拟退款成功）
+     */
+    @PostMapping("/{orderId}/refund")
+    public ApiResponse<BookingResponse> refund(@PathVariable Long orderId) {
+        return ApiResponse.ok(bookingService.refund(orderId));
+    }
+
+    /**
      * 支付接口框架（模拟支付成功）
      */
     @PostMapping("/pay")
@@ -63,7 +72,7 @@ public class BookingController {
      * 游客查看自己的订单
      */
     @GetMapping("/mine")
-    public ApiResponse<List<BookingResponse>> myOrders() {
+    public ApiResponse<List<BookingDetailVo>> myOrders() {
         return ApiResponse.ok(bookingService.listMyOrders());
     }
 
@@ -71,7 +80,7 @@ public class BookingController {
      * 经营者查看名下订单
      */
     @GetMapping
-    public ApiResponse<List<BookingResponse>> ownerOrders(@RequestParam Long farmStayId) {
+    public ApiResponse<List<BookingDetailVo>> ownerOrders(@RequestParam Long farmStayId) {
         return ApiResponse.ok(bookingService.listOwnerOrders(farmStayId));
     }
 }

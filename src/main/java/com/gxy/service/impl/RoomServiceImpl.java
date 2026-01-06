@@ -1,6 +1,7 @@
 package com.gxy.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.gxy.common.auth.AuthGuard;
 import com.gxy.common.exception.BusinessException;
 import com.gxy.mapper.FarmStayMapper;
 import com.gxy.mapper.RoomTypeMapper;
@@ -8,12 +9,10 @@ import com.gxy.model.dto.RoomRequest;
 import com.gxy.model.dto.RoomResponse;
 import com.gxy.model.entity.FarmStay;
 import com.gxy.model.entity.RoomType;
-import com.gxy.model.enums.UserType;
 import com.gxy.service.RoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -35,7 +34,7 @@ public class RoomServiceImpl implements RoomService {
 
     @Override
     public RoomResponse create(RoomRequest request) {
-        enforceOperator();
+        AuthGuard.enforceOperator();
         ensureOwner(request.getFarmStayId());
         RoomType roomType = buildRoomType(request);
         roomType.setCreatedAt(new java.util.Date());
@@ -46,7 +45,7 @@ public class RoomServiceImpl implements RoomService {
 
     @Override
     public RoomResponse update(Long id, RoomRequest request) {
-        enforceOperator();
+        AuthGuard.enforceOperator();
         ensureOwner(request.getFarmStayId());
         RoomType exists = roomTypeMapper.selectById(id);
         if (exists == null) {
@@ -84,12 +83,6 @@ public class RoomServiceImpl implements RoomService {
         FarmStay farmStay = farmStayMapper.selectByIdAndOwner(farmStayId, ownerId);
         if (farmStay == null) {
             throw new BusinessException("仅能管理自己的农家乐房型");
-        }
-    }
-
-    private void enforceOperator() {
-        if (!Objects.equals(UserType.OPERATOR.getCode(), StpUtil.getLoginType())) {
-            throw new BusinessException("此操作仅限经营者");
         }
     }
 

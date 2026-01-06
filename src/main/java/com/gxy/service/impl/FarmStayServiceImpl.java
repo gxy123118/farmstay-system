@@ -1,18 +1,17 @@
 package com.gxy.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.gxy.common.auth.AuthGuard;
 import com.gxy.common.exception.BusinessException;
 import com.gxy.mapper.FarmStayMapper;
 import com.gxy.model.dto.FarmStayRequest;
 import com.gxy.model.dto.FarmStayResponse;
 import com.gxy.model.entity.FarmStay;
-import com.gxy.model.enums.UserType;
 import com.gxy.service.FarmStayService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,7 +39,7 @@ public class FarmStayServiceImpl implements FarmStayService {
 
     @Override
     public FarmStayResponse create(FarmStayRequest request) {
-        enforceOperator();
+        AuthGuard.enforceOperator();
         FarmStay farmStay = new FarmStay();
         farmStay.setOwnerId(StpUtil.getLoginIdAsLong());
         updateFields(farmStay, request);
@@ -51,7 +50,7 @@ public class FarmStayServiceImpl implements FarmStayService {
 
     @Override
     public FarmStayResponse update(Long id, FarmStayRequest request) {
-        enforceOperator();
+        AuthGuard.enforceOperator();
         long ownerId = StpUtil.getLoginIdAsLong();
         FarmStay existing = farmStayMapper.selectByIdAndOwner(id, ownerId);
         if (existing == null) {
@@ -77,12 +76,6 @@ public class FarmStayServiceImpl implements FarmStayService {
         target.setCoverImage(request.getCoverImage());
         target.setContactPhone(request.getContactPhone());
         target.setTags(request.getTags());
-    }
-
-    private void enforceOperator() {
-        if (!Objects.equals(UserType.OPERATOR.getCode(), StpUtil.getLoginType())) {
-            throw new BusinessException("此操作仅限农家乐经营者");
-        }
     }
 
     private FarmStayResponse toResponse(FarmStay farmStay) {

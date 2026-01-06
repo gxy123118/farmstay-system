@@ -25,7 +25,5 @@ public class Review implements Serializable {
 
     private String content;
 
-    private String status;
-
     private Date createdAt;
 }

@@ -7,6 +7,8 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Options;
 
+import java.util.List;
+
 @Mapper
 public interface UserMapper {
 
@@ -24,4 +26,10 @@ public interface UserMapper {
             "VALUES(#{username}, #{password}, #{salt}, #{displayName}, #{userType}, #{status}, NOW(), NOW())")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insertUser(User user);
+
+    @Select("<script>" +
+            "SELECT id, username, display_name FROM user_account WHERE id IN " +
+            "<foreach collection='ids' item='id' open='(' separator=',' close=')'>#{id}</foreach>" +
+            "</script>")
+    List<User> selectByIds(@Param("ids") List<Long> ids);
 }

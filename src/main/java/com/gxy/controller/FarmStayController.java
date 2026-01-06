@@ -45,7 +45,7 @@ public class FarmStayController {
     /**
      * 查询单条农家乐详情
      */
-    @GetMapping("/{id}")
+    @GetMapping("/detail/{id}")
     public ApiResponse<FarmStayResponse> detail(@PathVariable Long id) {
         return ApiResponse.ok(farmStayService.detail(id));
     }

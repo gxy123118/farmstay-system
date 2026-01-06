@@ -1,6 +1,4 @@
 package com.gxy.controller;
-
-import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.gxy.common.ApiResponse;
 import com.gxy.model.dto.ReviewRequest;
 import com.gxy.model.dto.ReviewResponse;
@@ -40,10 +38,18 @@ public class ReviewController {
     }
 
     /**
-     * 经营者审核评价
+     * 游客查看自己订单的评价
      */
-    @PutMapping("/{id}/status")
-    public ApiResponse<ReviewResponse> moderate(@PathVariable Long id, @RequestParam String status) {
-        return ApiResponse.ok(reviewService.moderate(id, status));
+    @GetMapping("/order/{orderId}")
+    public ApiResponse<ReviewResponse> getByOrder(@PathVariable Long orderId) {
+        return ApiResponse.ok(reviewService.getByOrder(orderId));
+    }
+
+    /**
+     * 游客修改自己的评价
+     */
+    @PutMapping("/order/{orderId}")
+    public ApiResponse<ReviewResponse> update(@PathVariable Long orderId, @Valid @RequestBody ReviewRequest request) {
+        return ApiResponse.ok(reviewService.updateReview(orderId, request));
     }
 }

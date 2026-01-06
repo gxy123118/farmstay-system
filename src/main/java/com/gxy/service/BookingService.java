@@ -5,6 +5,7 @@ import com.gxy.model.dto.BookingResponse;
 import com.gxy.model.dto.OrderStatusUpdateRequest;
 import com.gxy.model.dto.PaymentRequest;
 import com.gxy.model.dto.PaymentResponse;
+import com.gxy.model.vo.BookingDetailVo;
 
 import java.util.List;
 
@@ -18,7 +19,9 @@ public interface BookingService {
 
     BookingResponse updateStatus(OrderStatusUpdateRequest request);
 
-    List<BookingResponse> listMyOrders();
+    BookingResponse refund(Long orderId);
 
-    List<BookingResponse> listOwnerOrders(Long farmStayId);
+    List<BookingDetailVo> listMyOrders();
+
+    List<BookingDetailVo> listOwnerOrders(Long farmStayId);
 }

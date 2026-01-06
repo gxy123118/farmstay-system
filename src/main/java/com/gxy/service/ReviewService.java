@@ -11,5 +11,7 @@ public interface ReviewService {
 
     List<ReviewResponse> listForFarmStay(Long farmStayId);
 
-    ReviewResponse moderate(Long reviewId, String status);
+    ReviewResponse getByOrder(Long orderId);
+
+    ReviewResponse updateReview(Long orderId, ReviewRequest request);
 }

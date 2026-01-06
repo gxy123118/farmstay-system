@@ -38,7 +38,7 @@ public class UserServiceImpl implements UserService {
         }
         StpUtil.login(user.getId(), userType.getCode());
         StpUtil.getSession().set("userType", userType.getCode());
-        return new LoginResponse(StpUtil.getTokenValue(), userType.getCode(), StpUtil.getTokenTimeout());
+        return new LoginResponse(StpUtil.getTokenValue(), userType.getCode(), StpUtil.getTokenTimeout(), user.getId());
     }
 
     @Override
@@ -62,7 +62,7 @@ public class UserServiceImpl implements UserService {
         userMapper.insertUser(user);
         StpUtil.login(user.getId(), userType.getCode());
         StpUtil.getSession().set("userType", userType.getCode());
-        return new LoginResponse(StpUtil.getTokenValue(), userType.getCode(), StpUtil.getTokenTimeout());
+        return new LoginResponse(StpUtil.getTokenValue(), userType.getCode(), StpUtil.getTokenTimeout(), user.getId());
     }
 
     private void extracted(String username, String password) {
