@@ -24,6 +24,10 @@ public class BookingResponse {
 
     private Integer guests;
 
+    private BigDecimal diningAmount;
+
+    private BigDecimal activityAmount;
+
     private BigDecimal totalAmount;
 
     private String status;

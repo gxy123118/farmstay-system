@@ -21,6 +21,7 @@ public class FarmStayServiceImpl implements FarmStayService {
     private final FarmStayMapper farmStayMapper;
 
     private static final String STATUS_PUBLISHED = "PUBLISHED";
+    private static final String STATUS_OFFLINE = "OFFLINE";
 
     @Override
     public List<FarmStayResponse> list(String city, String keyword, String priceLevel, String tag) {
@@ -35,6 +36,16 @@ public class FarmStayServiceImpl implements FarmStayService {
             throw new BusinessException("农家乐不存在");
         }
         return toResponse(farmStay);
+    }
+
+    @Override
+    public List<FarmStayResponse> listByOwner() {
+        AuthGuard.enforceOperator();
+        Long ownerId = StpUtil.getLoginIdAsLong();
+        return farmStayMapper.selectByOwner(ownerId)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -63,6 +74,21 @@ public class FarmStayServiceImpl implements FarmStayService {
             throw new BusinessException("农家乐更新失败");
         }
         return toResponse(existing);
+    }
+
+    @Override
+    public boolean delete(Long id) {
+        AuthGuard.enforceOperator();
+        long ownerId = StpUtil.getLoginIdAsLong();
+        FarmStay existing = farmStayMapper.selectByIdAndOwner(id, ownerId);
+        if (existing == null) {
+            throw new BusinessException("只能删除自己的农家乐");
+        }
+        int changed = farmStayMapper.updateStatusByOwner(id, ownerId, STATUS_OFFLINE);
+        if (changed == 0) {
+            throw new BusinessException("删除失败");
+        }
+        return true;
     }
 
     private void updateFields(FarmStay target, FarmStayRequest request) {

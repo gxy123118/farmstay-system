@@ -3,10 +3,14 @@ package com.gxy.model.vo;
 import com.gxy.model.dto.BookingResponse;
 import com.gxy.model.dto.FarmStayResponse;
 import com.gxy.model.dto.RoomResponse;
+import com.gxy.model.entity.BookingActivityItem;
+import com.gxy.model.entity.BookingDiningItem;
 import lombok.Data;
 
+import java.util.List;
+
 /**
- * 对外返回的订单详情，附带房型与农家乐信息。
+ * 对外返回的订单详情，附带房型与农家乐信息
  */
 @Data
 public class BookingDetailVo extends BookingResponse {
@@ -16,7 +20,11 @@ public class BookingDetailVo extends BookingResponse {
     private RoomResponse room;
 
     /**
-     * 是否已提交评价。
+     * 是否已提交评价
      */
     private Boolean reviewed;
+
+    private List<BookingDiningItem> diningItems;
+
+    private List<BookingActivityItem> activityItems;
 }

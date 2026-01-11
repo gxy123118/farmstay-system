@@ -30,6 +30,10 @@ public class BookingOrder implements Serializable {
 
     private Integer guests;
 
+    private BigDecimal diningAmount;
+
+    private BigDecimal activityAmount;
+
     private BigDecimal totalAmount;
 
     private String status;

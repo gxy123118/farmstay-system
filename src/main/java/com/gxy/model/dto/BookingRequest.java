@@ -6,6 +6,7 @@ import javax.validation.constraints.Future;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 预订下单请求
@@ -13,29 +14,33 @@ import java.util.Date;
 @Data
 public class BookingRequest {
 
-    @NotNull(message = "农家乐ID不能为空")
+    @NotNull(message = "farmStayId is required")
     private Long farmStayId;
 
-    @NotNull(message = "房型ID不能为空")
+    @NotNull(message = "roomTypeId is required")
     private Long roomTypeId;
 
-    @NotNull(message = "入住日期不能为空")
-    @Future(message = "入住日期需大于当前日期")
+    @NotNull(message = "checkInDate is required")
+    @Future(message = "checkInDate must be in the future")
     private Date checkInDate;
 
-    @NotNull(message = "离店日期不能为空")
-    @Future(message = "离店日期需大于当前日期")
+    @NotNull(message = "checkOutDate is required")
+    @Future(message = "checkOutDate must be in the future")
     private Date checkOutDate;
 
-    @NotNull(message = "入住人数不能为空")
+    @NotNull(message = "guests is required")
     private Integer guests;
+
+    private List<Long> diningItemIds;
+
+    private List<Long> activityItemIds;
 
     private String couponCode;
 
-    @NotBlank(message = "联系人姓名不能为空")
+    @NotBlank(message = "contactName is required")
     private String contactName;
 
-    @NotBlank(message = "联系人电话不能为空")
+    @NotBlank(message = "contactPhone is required")
     private String contactPhone;
 
     private String remarks;

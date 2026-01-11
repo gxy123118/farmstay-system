@@ -18,6 +18,11 @@ public interface FarmStayService {
     FarmStayResponse detail(Long id);
 
     /**
+     * 经营者查询自己名下农家乐
+     */
+    List<FarmStayResponse> listByOwner();
+
+    /**
      * 经营者新建农家乐
      */
     FarmStayResponse create(FarmStayRequest request);
@@ -26,4 +31,9 @@ public interface FarmStayService {
      * 经营者更新自家农家乐信息
      */
     FarmStayResponse update(Long id, FarmStayRequest request);
+
+    /**
+     * 经营者删除/下架农家乐
+     */
+    boolean delete(Long id);
 }

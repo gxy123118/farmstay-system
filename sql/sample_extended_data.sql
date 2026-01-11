@@ -20,8 +20,3 @@ VALUES
   ('ORD20240101001', 1, 1, 1, DATE_ADD(CURDATE(), INTERVAL 3 DAY), DATE_ADD(CURDATE(), INTERVAL 5 DAY), 2, 1360.00, 'PAID', 'mock', '刘游客', '13800000001', 'WELCOME50', '需要高楼层'),
   ('ORD20240101002', 1, 2, 3, DATE_ADD(CURDATE(), INTERVAL 7 DAY), DATE_ADD(CURDATE(), INTERVAL 9 DAY), 2, 1880.00, 'CREATED', 'UNPAID', '王体验', '13800000002', NULL, '晚到请保留');
 
--- 评价示例（仅对已存在订单 ID，状态设为已审核）
-INSERT INTO review (order_id, farm_stay_id, visitor_id, rating, content)
-VALUES
-  (1, 1, 1, 5, '房间很干净，视野好，早餐丰盛。'),
-  (2, 2, 1, 4, '庭院安静，下午茶不错，房内香氛稍重。');

@@ -8,6 +8,7 @@ import com.gxy.model.dto.FarmStayResponse;
 import com.gxy.service.FarmStayService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,7 +33,7 @@ public class FarmStayController {
     private final FarmStayService farmStayService;
 
     /**
-     * 查询农家乐列表，可按城市/关键词/价格等级/标签筛选
+     * 查询农家乐列表，可按城市/关键字/价格等级/标签筛选
      */
     @GetMapping("/search")
     public ApiResponse<List<FarmStayResponse>> list(@RequestParam(required = false) String city,
@@ -51,6 +52,14 @@ public class FarmStayController {
     }
 
     /**
+     * 经营者查询自己名下农家乐
+     */
+    @GetMapping("/owner")
+    public ApiResponse<List<FarmStayResponse>> ownerList() {
+        return ApiResponse.ok(farmStayService.listByOwner());
+    }
+
+    /**
      * 经营者创建农家乐
      */
     @PostMapping
@@ -64,5 +73,13 @@ public class FarmStayController {
     @PutMapping("/{id}")
     public ApiResponse<FarmStayResponse> update(@PathVariable Long id, @Valid @RequestBody FarmStayRequest request) {
         return ApiResponse.ok(farmStayService.update(id, request));
+    }
+
+    /**
+     * 经营者删除/下架农家乐
+     */
+    @DeleteMapping("/{id}")
+    public ApiResponse<Boolean> delete(@PathVariable Long id) {
+        return ApiResponse.ok(farmStayService.delete(id));
     }
 }

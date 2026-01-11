@@ -39,6 +39,9 @@ public interface FarmStayMapper {
     @Select("SELECT * FROM farmstay WHERE id = #{id} AND owner_id = #{ownerId}")
     FarmStay selectByIdAndOwner(@Param("id") Long id, @Param("ownerId") Long ownerId);
 
+    @Select("SELECT * FROM farmstay WHERE owner_id = #{ownerId} ORDER BY updated_at DESC")
+    List<FarmStay> selectByOwner(@Param("ownerId") Long ownerId);
+
     @Insert("INSERT INTO farmstay(owner_id, name, city, address, description, price_range, price_level, average_rating, cover_image, contact_phone, tags, status, created_at, updated_at) " +
             "VALUES(#{ownerId}, #{name}, #{city}, #{address}, #{description}, #{priceRange}, #{priceLevel}, #{averageRating}, #{coverImage}, #{contactPhone}, #{tags}, #{status}, NOW(), NOW())")
     @org.apache.ibatis.annotations.Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
@@ -50,4 +53,7 @@ public interface FarmStayMapper {
             "cover_image = #{coverImage}, contact_phone = #{contactPhone}, tags = #{tags}, status = #{status}, updated_at = NOW() " +
             "WHERE id = #{id} AND owner_id = #{ownerId}")
     int updateByOwner(FarmStay farmStay);
+
+    @Update("UPDATE farmstay SET status = #{status}, updated_at = NOW() WHERE id = #{id} AND owner_id = #{ownerId}")
+    int updateStatusByOwner(@Param("id") Long id, @Param("ownerId") Long ownerId, @Param("status") String status);
 }

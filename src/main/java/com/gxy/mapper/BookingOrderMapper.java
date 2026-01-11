@@ -8,8 +8,8 @@ import java.util.List;
 @Mapper
 public interface BookingOrderMapper {
 
-    @Insert("INSERT INTO booking_order(order_no, visitor_id, farm_stay_id, room_type_id, check_in_date, check_out_date, guests, total_amount, status, payment_channel, contact_name, contact_phone, coupon_code, remarks, created_at, updated_at) " +
-            "VALUES(#{orderNo}, #{visitorId}, #{farmStayId}, #{roomTypeId}, #{checkInDate}, #{checkOutDate}, #{guests}, #{totalAmount}, #{status}, #{paymentChannel}, #{contactName}, #{contactPhone}, #{couponCode}, #{remarks}, NOW(), NOW())")
+    @Insert("INSERT INTO booking_order(order_no, visitor_id, farm_stay_id, room_type_id, check_in_date, check_out_date, guests, dining_amount, activity_amount, total_amount, status, payment_channel, contact_name, contact_phone, coupon_code, remarks, created_at, updated_at) " +
+            "VALUES(#{orderNo}, #{visitorId}, #{farmStayId}, #{roomTypeId}, #{checkInDate}, #{checkOutDate}, #{guests}, #{diningAmount}, #{activityAmount}, #{totalAmount}, #{status}, #{paymentChannel}, #{contactName}, #{contactPhone}, #{couponCode}, #{remarks}, NOW(), NOW())")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(BookingOrder order);
 

@@ -4,16 +4,24 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.IdUtil;
 import com.gxy.common.auth.AuthGuard;
 import com.gxy.common.exception.BusinessException;
+import com.gxy.mapper.ActivityMapper;
+import com.gxy.mapper.BookingActivityMapper;
+import com.gxy.mapper.BookingDiningMapper;
 import com.gxy.mapper.BookingOrderMapper;
 import com.gxy.mapper.FarmStayMapper;
 import com.gxy.mapper.ReviewMapper;
 import com.gxy.mapper.RoomTypeMapper;
+import com.gxy.mapper.DiningMapper;
 import com.gxy.model.dto.BookingRequest;
 import com.gxy.model.dto.BookingResponse;
 import com.gxy.model.dto.OrderStatusUpdateRequest;
 import com.gxy.model.dto.PaymentRequest;
 import com.gxy.model.dto.PaymentResponse;
+import com.gxy.model.entity.ActivityItem;
+import com.gxy.model.entity.BookingActivityItem;
+import com.gxy.model.entity.BookingDiningItem;
 import com.gxy.model.entity.BookingOrder;
+import com.gxy.model.entity.DiningItem;
 import com.gxy.model.entity.FarmStay;
 import com.gxy.model.entity.RoomType;
 import com.gxy.model.entity.Review;
@@ -25,10 +33,13 @@ import com.gxy.service.CouponService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -45,6 +56,10 @@ public class BookingServiceImpl implements BookingService {
     private final FarmStayMapper farmStayMapper;
     private final ReviewMapper reviewMapper;
     private final CouponService couponService;
+    private final DiningMapper diningMapper;
+    private final ActivityMapper activityMapper;
+    private final BookingDiningMapper bookingDiningMapper;
+    private final BookingActivityMapper bookingActivityMapper;
 
     private static final String STATUS_CREATED = "CREATED";
     private static final String STATUS_PAID = "PAID";
@@ -52,6 +67,7 @@ public class BookingServiceImpl implements BookingService {
     private static final String STATUS_REFUNDED = "REFUNDED";
 
     @Override
+    @Transactional
     public BookingResponse createOrder(BookingRequest request) {
         AuthGuard.enforceVisitor();
         FarmStay farmStay = farmStayMapper.selectById(request.getFarmStayId());
@@ -64,8 +80,42 @@ public class BookingServiceImpl implements BookingService {
         }
         long nights = calculateNights(request.getCheckInDate(), request.getCheckOutDate());
         if (nights <= 0) {
-            throw new BusinessException("离店日期必须晚于入住日期");
+            throw new BusinessException("退房日期必须晚于入住日期");
         }
+
+        List<Long> diningIds = distinctIds(request.getDiningItemIds());
+        List<Long> activityIds = distinctIds(request.getActivityItemIds());
+
+        List<DiningItem> diningList = diningIds.isEmpty() ? Collections.emptyList() : diningMapper.selectByIds(diningIds);
+        if (!diningIds.isEmpty() && diningList.size() != diningIds.size()) {
+            throw new BusinessException("餐饮服务不存在");
+        }
+        for (DiningItem item : diningList) {
+            if (!Objects.equals(item.getFarmStayId(), request.getFarmStayId())) {
+                throw new BusinessException("餐饮服务不属于该农家乐");
+            }
+        }
+
+        List<ActivityItem> activityList = activityIds.isEmpty() ? Collections.emptyList() : activityMapper.selectByIds(activityIds);
+        if (!activityIds.isEmpty() && activityList.size() != activityIds.size()) {
+            throw new BusinessException("活动服务不存在");
+        }
+        for (ActivityItem item : activityList) {
+            if (!Objects.equals(item.getFarmStayId(), request.getFarmStayId())) {
+                throw new BusinessException("活动服务不属于该农家乐");
+            }
+        }
+
+        BigDecimal roomAmount = roomType.getPrice().multiply(BigDecimal.valueOf(nights));
+        BigDecimal diningAmount = sumAmount(diningList.stream().map(DiningItem::getPrice).collect(Collectors.toList()));
+        BigDecimal activityAmount = sumAmount(activityList.stream().map(ActivityItem::getPrice).collect(Collectors.toList()));
+        BigDecimal totalAmount = roomAmount.add(diningAmount).add(activityAmount);
+        BigDecimal discount = couponService.calculateDiscount(request.getCouponCode(), totalAmount, request.getFarmStayId());
+        BigDecimal payable = totalAmount.subtract(discount);
+        if (payable.compareTo(BigDecimal.ZERO) < 0) {
+            payable = BigDecimal.ZERO;
+        }
+
         BookingOrder order = new BookingOrder();
         order.setOrderNo(IdUtil.getSnowflakeNextIdStr());
         order.setVisitorId(StpUtil.getLoginIdAsLong());
@@ -74,12 +124,8 @@ public class BookingServiceImpl implements BookingService {
         order.setCheckInDate(request.getCheckInDate());
         order.setCheckOutDate(request.getCheckOutDate());
         order.setGuests(request.getGuests());
-        BigDecimal amount = roomType.getPrice().multiply(BigDecimal.valueOf(nights));
-        BigDecimal discount = couponService.calculateDiscount(request.getCouponCode(), amount, request.getFarmStayId());
-        BigDecimal payable = amount.subtract(discount);
-        if (payable.compareTo(BigDecimal.ZERO) < 0) {
-            payable = BigDecimal.ZERO;
-        }
+        order.setDiningAmount(diningAmount);
+        order.setActivityAmount(activityAmount);
         order.setTotalAmount(payable);
         order.setStatus(STATUS_CREATED);
         order.setPaymentChannel("UNPAID");
@@ -91,6 +137,35 @@ public class BookingServiceImpl implements BookingService {
         order.setCreatedAt(now);
         order.setUpdatedAt(now);
         bookingOrderMapper.insert(order);
+
+        if (!diningList.isEmpty()) {
+            List<BookingDiningItem> orderItems = new ArrayList<>();
+            for (DiningItem item : diningList) {
+                BookingDiningItem record = new BookingDiningItem();
+                record.setOrderId(order.getId());
+                record.setDiningItemId(item.getId());
+                record.setItemName(item.getName());
+                record.setPrice(item.getPrice() == null ? BigDecimal.ZERO : item.getPrice());
+                record.setQuantity(1);
+                orderItems.add(record);
+            }
+            bookingDiningMapper.insertBatch(orderItems);
+        }
+
+        if (!activityList.isEmpty()) {
+            List<BookingActivityItem> orderItems = new ArrayList<>();
+            for (ActivityItem item : activityList) {
+                BookingActivityItem record = new BookingActivityItem();
+                record.setOrderId(order.getId());
+                record.setActivityItemId(item.getId());
+                record.setItemName(item.getName());
+                record.setPrice(item.getPrice() == null ? BigDecimal.ZERO : item.getPrice());
+                record.setQuantity(1);
+                orderItems.add(record);
+            }
+            bookingActivityMapper.insertBatch(orderItems);
+        }
+
         return toResponse(order);
     }
 
@@ -197,6 +272,8 @@ public class BookingServiceImpl implements BookingService {
         response.setCheckInDate(order.getCheckInDate());
         response.setCheckOutDate(order.getCheckOutDate());
         response.setGuests(order.getGuests());
+        response.setDiningAmount(order.getDiningAmount());
+        response.setActivityAmount(order.getActivityAmount());
         response.setTotalAmount(order.getTotalAmount());
         response.setStatus(order.getStatus());
         response.setPaymentChannel(order.getPaymentChannel());
@@ -213,15 +290,25 @@ public class BookingServiceImpl implements BookingService {
         Map<Long, FarmStay> farmStayCache = new HashMap<>();
         Map<Long, RoomType> roomTypeCache = new HashMap<>();
         Map<Long, Review> reviewMap = new HashMap<>();
+        Map<Long, List<BookingDiningItem>> diningMap = new HashMap<>();
+        Map<Long, List<BookingActivityItem>> activityMap = new HashMap<>();
         if (!orders.isEmpty()) {
             List<Long> orderIds = orders.stream().map(BookingOrder::getId).collect(Collectors.toList());
             reviewMap = reviewMapper.selectByOrderIds(orderIds)
                     .stream()
                     .collect(Collectors.toMap(Review::getOrderId, review -> review, (first, second) -> first));
+            diningMap = bookingDiningMapper.selectByOrderIds(orderIds)
+                    .stream()
+                    .collect(Collectors.groupingBy(BookingDiningItem::getOrderId));
+            activityMap = bookingActivityMapper.selectByOrderIds(orderIds)
+                    .stream()
+                    .collect(Collectors.groupingBy(BookingActivityItem::getOrderId));
         }
         Map<Long, Review> finalReviewMap = reviewMap;
+        Map<Long, List<BookingDiningItem>> finalDiningMap = diningMap;
+        Map<Long, List<BookingActivityItem>> finalActivityMap = activityMap;
         return orders.stream()
-                .map(order -> toDetailVo(order, farmStayCache, roomTypeCache, finalReviewMap))
+                .map(order -> toDetailVo(order, farmStayCache, roomTypeCache, finalReviewMap, finalDiningMap, finalActivityMap))
                 .collect(Collectors.toList());
     }
 
@@ -229,7 +316,9 @@ public class BookingServiceImpl implements BookingService {
             BookingOrder order,
             Map<Long, FarmStay> farmStayCache,
             Map<Long, RoomType> roomTypeCache,
-            Map<Long, Review> reviewMap
+            Map<Long, Review> reviewMap,
+            Map<Long, List<BookingDiningItem>> diningMap,
+            Map<Long, List<BookingActivityItem>> activityMap
     ) {
         BookingResponse base = toResponse(order);
         BookingDetailVo detail = new BookingDetailVo();
@@ -239,6 +328,8 @@ public class BookingServiceImpl implements BookingService {
         RoomType roomType = roomTypeCache.computeIfAbsent(order.getRoomTypeId(), roomTypeMapper::selectById);
         detail.setRoom(roomType == null ? null : toRoomResponse(roomType));
         detail.setReviewed(reviewMap.containsKey(order.getId()));
+        detail.setDiningItems(diningMap.getOrDefault(order.getId(), Collections.emptyList()));
+        detail.setActivityItems(activityMap.getOrDefault(order.getId(), Collections.emptyList()));
         return detail;
     }
 
@@ -283,5 +374,28 @@ public class BookingServiceImpl implements BookingService {
         response.setCreatedAt(roomType.getCreatedAt());
         response.setUpdatedAt(roomType.getUpdatedAt());
         return response;
+    }
+
+    private List<Long> distinctIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return ids.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    private BigDecimal sumAmount(List<BigDecimal> prices) {
+        BigDecimal total = BigDecimal.ZERO;
+        if (prices == null) {
+            return total;
+        }
+        for (BigDecimal price : prices) {
+            if (price != null) {
+                total = total.add(price);
+            }
+        }
+        return total;
     }
 }
