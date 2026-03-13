@@ -2,8 +2,8 @@ package com.gxy.model.dto;
 
 import lombok.Data;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * 支付下单请求（接口框架，暂不对接第三方）

@@ -1,5 +1,6 @@
 package com.gxy.service;
 
+import com.gxy.common.PageResponse;
 import com.gxy.model.dto.FarmStayRequest;
 import com.gxy.model.dto.FarmStayResponse;
 
@@ -10,7 +11,7 @@ public interface FarmStayService {
     /**
      * 获取所有公开的农家乐列表
      */
-    List<FarmStayResponse> list(String city, String keyword, String priceLevel, String tag);
+    PageResponse<FarmStayResponse> list(String city, String keyword, String priceLevel, String tag, Integer page, Integer pageSize);
 
     /**
      * 根据编号查看农家乐详情

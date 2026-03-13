@@ -12,6 +12,7 @@ import com.gxy.mapper.FarmStayMapper;
 import com.gxy.mapper.ReviewMapper;
 import com.gxy.mapper.RoomTypeMapper;
 import com.gxy.mapper.DiningMapper;
+import com.gxy.mapper.UserMapper;
 import com.gxy.model.dto.BookingRequest;
 import com.gxy.model.dto.BookingResponse;
 import com.gxy.model.dto.OrderStatusUpdateRequest;
@@ -25,6 +26,7 @@ import com.gxy.model.entity.DiningItem;
 import com.gxy.model.entity.FarmStay;
 import com.gxy.model.entity.RoomType;
 import com.gxy.model.entity.Review;
+import com.gxy.model.entity.User;
 import com.gxy.model.dto.FarmStayResponse;
 import com.gxy.model.dto.RoomResponse;
 import com.gxy.model.vo.BookingDetailVo;
@@ -60,6 +62,7 @@ public class BookingServiceImpl implements BookingService {
     private final ActivityMapper activityMapper;
     private final BookingDiningMapper bookingDiningMapper;
     private final BookingActivityMapper bookingActivityMapper;
+    private final UserMapper userMapper;
 
     private static final String STATUS_CREATED = "CREATED";
     private static final String STATUS_PAID = "PAID";
@@ -289,11 +292,15 @@ public class BookingServiceImpl implements BookingService {
     private List<BookingDetailVo> buildDetailList(List<BookingOrder> orders) {
         Map<Long, FarmStay> farmStayCache = new HashMap<>();
         Map<Long, RoomType> roomTypeCache = new HashMap<>();
+        Map<Long, User> userMap = new HashMap<>();
         Map<Long, Review> reviewMap = new HashMap<>();
         Map<Long, List<BookingDiningItem>> diningMap = new HashMap<>();
         Map<Long, List<BookingActivityItem>> activityMap = new HashMap<>();
         if (!orders.isEmpty()) {
             List<Long> orderIds = orders.stream().map(BookingOrder::getId).collect(Collectors.toList());
+            userMap = userMapper.selectByIds(
+                    orders.stream().map(BookingOrder::getVisitorId).distinct().collect(Collectors.toList())
+            ).stream().collect(Collectors.toMap(User::getId, user -> user, (first, second) -> first));
             reviewMap = reviewMapper.selectByOrderIds(orderIds)
                     .stream()
                     .collect(Collectors.toMap(Review::getOrderId, review -> review, (first, second) -> first));
@@ -304,11 +311,12 @@ public class BookingServiceImpl implements BookingService {
                     .stream()
                     .collect(Collectors.groupingBy(BookingActivityItem::getOrderId));
         }
+        Map<Long, User> finalUserMap = userMap;
         Map<Long, Review> finalReviewMap = reviewMap;
         Map<Long, List<BookingDiningItem>> finalDiningMap = diningMap;
         Map<Long, List<BookingActivityItem>> finalActivityMap = activityMap;
         return orders.stream()
-                .map(order -> toDetailVo(order, farmStayCache, roomTypeCache, finalReviewMap, finalDiningMap, finalActivityMap))
+                .map(order -> toDetailVo(order, farmStayCache, roomTypeCache, finalUserMap, finalReviewMap, finalDiningMap, finalActivityMap))
                 .collect(Collectors.toList());
     }
 
@@ -316,6 +324,7 @@ public class BookingServiceImpl implements BookingService {
             BookingOrder order,
             Map<Long, FarmStay> farmStayCache,
             Map<Long, RoomType> roomTypeCache,
+            Map<Long, User> userMap,
             Map<Long, Review> reviewMap,
             Map<Long, List<BookingDiningItem>> diningMap,
             Map<Long, List<BookingActivityItem>> activityMap
@@ -323,6 +332,13 @@ public class BookingServiceImpl implements BookingService {
         BookingResponse base = toResponse(order);
         BookingDetailVo detail = new BookingDetailVo();
         BeanUtils.copyProperties(base, detail);
+        User visitor = userMap.get(order.getVisitorId());
+        if (visitor != null) {
+            detail.setVisitorUsername(visitor.getUsername());
+            detail.setVisitorName(visitor.getDisplayName() == null || visitor.getDisplayName().isEmpty()
+                    ? visitor.getUsername()
+                    : visitor.getDisplayName());
+        }
         FarmStay farmStay = farmStayCache.computeIfAbsent(order.getFarmStayId(), farmStayMapper::selectById);
         detail.setFarmStay(farmStay == null ? null : toFarmStayResponse(farmStay));
         RoomType roomType = roomTypeCache.computeIfAbsent(order.getRoomTypeId(), roomTypeMapper::selectById);

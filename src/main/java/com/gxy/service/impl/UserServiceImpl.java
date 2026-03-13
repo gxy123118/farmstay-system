@@ -38,7 +38,7 @@ public class UserServiceImpl implements UserService {
         }
         StpUtil.login(user.getId(), userType.getCode());
         StpUtil.getSession().set("userType", userType.getCode());
-        return new LoginResponse(StpUtil.getTokenValue(), userType.getCode(), StpUtil.getTokenTimeout(), user.getId());
+        return buildLoginResponse(user);
     }
 
     @Override
@@ -62,7 +62,17 @@ public class UserServiceImpl implements UserService {
         userMapper.insertUser(user);
         StpUtil.login(user.getId(), userType.getCode());
         StpUtil.getSession().set("userType", userType.getCode());
-        return new LoginResponse(StpUtil.getTokenValue(), userType.getCode(), StpUtil.getTokenTimeout(), user.getId());
+        return buildLoginResponse(user);
+    }
+
+    @Override
+    public LoginResponse currentUser() {
+        StpUtil.checkLogin();
+        User user = userMapper.selectById(StpUtil.getLoginIdAsLong());
+        if (user == null) {
+            throw new BusinessException("当前登录用户不存在");
+        }
+        return buildLoginResponse(user);
     }
 
     private void extracted(String username, String password) {
@@ -93,5 +103,17 @@ public class UserServiceImpl implements UserService {
         return password != null &&
                 password.length() >= 6 &&
                 password.matches("^[a-zA-Z0-9!@#$%^&*()_+\\-=\\[\\]{}|;':\",./<>?`~]*$");
+    }
+
+    private LoginResponse buildLoginResponse(User user) {
+        LoginResponse response = new LoginResponse();
+        response.setToken(StpUtil.getTokenValue());
+        response.setLoginType(user.getUserType());
+        response.setExpire(StpUtil.getTokenTimeout());
+        response.setUserId(user.getId());
+        response.setUsername(user.getUsername());
+        response.setDisplayName(Optional.ofNullable(user.getDisplayName()).filter(name -> !name.isBlank()).orElse(user.getUsername()));
+        response.setStatus(user.getStatus());
+        return response;
     }
 }

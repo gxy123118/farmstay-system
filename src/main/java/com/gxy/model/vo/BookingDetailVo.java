@@ -15,6 +15,10 @@ import java.util.List;
 @Data
 public class BookingDetailVo extends BookingResponse {
 
+    private String visitorUsername;
+
+    private String visitorName;
+
     private FarmStayResponse farmStay;
 
     private RoomResponse room;

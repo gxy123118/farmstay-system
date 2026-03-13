@@ -1,8 +1,18 @@
 spring:
   datasource:
-    url: jdbc:mysql://8.140.224.10:3306/farmstay_db
+    url: jdbc:mysql://localhost:3306/farmstay_db
     username: root
-    password: 123456
+    password: Coldplay789
+  ai:
+    model:
+      chat: openai
+    openai:
+      api-key: sk-api-iu7EoAuiimpksuYzVnZCSoKY5fr4mS0kJaW6JYJHKtVdLF3sDs_To9QH5fpSijKTZUAHyHuBkXaTRv1Zw5DhVqutRnim309tXpQ0ZGyzhdQmBff0TEi8NRI
+      base-url: https://api.minimaxi.com
+      chat:
+        options:
+          model: MiniMax-M2.5
+          temperature: 0.2
 sa-token:
   token-name: farmstay-token
   timeout: 1800
@@ -16,4 +26,10 @@ springdoc:
 logging:
   level:
     com.gxy: debug
+app:
+  ai:
+    operator-insight:
+      enabled: true
+      model: MiniMax-M2.5
+      max-review-samples: 20
 

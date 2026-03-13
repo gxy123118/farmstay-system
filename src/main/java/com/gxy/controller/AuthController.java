@@ -7,12 +7,13 @@ import com.gxy.model.dto.RegisterRequest;
 import com.gxy.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -30,5 +31,10 @@ public class AuthController {
     @PostMapping("/register")
     public ApiResponse<LoginResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ApiResponse.ok(userService.register(request));
+    }
+
+    @GetMapping("/me")
+    public ApiResponse<LoginResponse> currentUser() {
+        return ApiResponse.ok(userService.currentUser());
     }
 }

@@ -15,4 +15,6 @@ public interface UserService {
      * 注册并自动登录
      */
     LoginResponse register(RegisterRequest request);
+
+    LoginResponse currentUser();
 }

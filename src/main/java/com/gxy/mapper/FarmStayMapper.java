@@ -20,12 +20,29 @@ public interface FarmStayMapper {
             "<if test=\"tag != null and tag != ''\">AND tags LIKE CONCAT('%', #{tag}, '%')</if> " +
             "<if test=\"priceLevel != null and priceLevel != ''\">AND price_level = #{priceLevel}</if> " +
             "ORDER BY updated_at DESC " +
+            "LIMIT #{offset}, #{pageSize} " +
             "</script>")
-    List<FarmStay> selectByConditions(@Param("status") String status,
-                                      @Param("city") String city,
-                                      @Param("keyword") String keyword,
-                                      @Param("priceLevel") String priceLevel,
-                                      @Param("tag") String tag);
+    List<FarmStay> selectPageByConditions(@Param("status") String status,
+                                          @Param("city") String city,
+                                          @Param("keyword") String keyword,
+                                          @Param("priceLevel") String priceLevel,
+                                          @Param("tag") String tag,
+                                          @Param("offset") int offset,
+                                          @Param("pageSize") int pageSize);
+
+    @Select("<script>" +
+            "SELECT COUNT(*) FROM farmstay " +
+            "WHERE status = #{status} " +
+            "<if test=\"city != null and city != ''\">AND city LIKE CONCAT('%', #{city}, '%')</if> " +
+            "<if test=\"keyword != null and keyword != ''\">AND (name LIKE CONCAT('%', #{keyword}, '%') OR tags LIKE CONCAT('%', #{keyword}, '%'))</if> " +
+            "<if test=\"tag != null and tag != ''\">AND tags LIKE CONCAT('%', #{tag}, '%')</if> " +
+            "<if test=\"priceLevel != null and priceLevel != ''\">AND price_level = #{priceLevel}</if> " +
+            "</script>")
+    long countByConditions(@Param("status") String status,
+                           @Param("city") String city,
+                           @Param("keyword") String keyword,
+                           @Param("priceLevel") String priceLevel,
+                           @Param("tag") String tag);
 
     @Select("SELECT COUNT(*) FROM farmstay WHERE status = #{status}")
     long countByStatus(@Param("status") String status);

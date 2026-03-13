@@ -3,6 +3,7 @@ package com.gxy.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckRole;
 import com.gxy.common.ApiResponse;
+import com.gxy.common.PageResponse;
 import com.gxy.model.dto.FarmStayRequest;
 import com.gxy.model.dto.FarmStayResponse;
 import com.gxy.service.FarmStayService;
@@ -18,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.List;
 
 /**
@@ -36,11 +37,13 @@ public class FarmStayController {
      * 查询农家乐列表，可按城市/关键字/价格等级/标签筛选
      */
     @GetMapping("/search")
-    public ApiResponse<List<FarmStayResponse>> list(@RequestParam(required = false) String city,
-                                                    @RequestParam(required = false) String keyword,
-                                                    @RequestParam(required = false) String priceLevel,
-                                                    @RequestParam(required = false) String tag) {
-        return ApiResponse.ok(farmStayService.list(city, keyword, priceLevel, tag));
+    public ApiResponse<PageResponse<FarmStayResponse>> list(@RequestParam(required = false) String city,
+                                                            @RequestParam(required = false) String keyword,
+                                                            @RequestParam(required = false) String priceLevel,
+                                                            @RequestParam(required = false) String tag,
+                                                            @RequestParam(defaultValue = "1") Integer page,
+                                                            @RequestParam(defaultValue = "8") Integer pageSize) {
+        return ApiResponse.ok(farmStayService.list(city, keyword, priceLevel, tag, page, pageSize));
     }
 
     /**

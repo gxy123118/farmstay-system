@@ -41,6 +41,6 @@ public class HomeServiceImpl implements HomeService {
 
     @Override
     public List<FarmStayResponse> recommendations(String city, String priceLevel, String tag) {
-        return farmStayService.list(city, null, priceLevel, tag);
+        return farmStayService.list(city, null, priceLevel, tag, 1, 6).getList();
     }
 }

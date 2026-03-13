@@ -1,10 +1,8 @@
 package com.gxy.model.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
-@AllArgsConstructor
 public class LoginResponse {
 
     private String token;
@@ -14,4 +12,10 @@ public class LoginResponse {
     private Long expire;
 
     private Long userId;
+
+    private String username;
+
+    private String displayName;
+
+    private String status;
 }

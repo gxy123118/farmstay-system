@@ -1,8 +1,36 @@
 ﻿USE farmstay_db;
 
-ALTER TABLE booking_order
-  ADD COLUMN dining_amount DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER guests,
-  ADD COLUMN activity_amount DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER dining_amount;
+SET @has_dining_amount := (
+  SELECT COUNT(*)
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = 'farmstay_db'
+    AND TABLE_NAME = 'booking_order'
+    AND COLUMN_NAME = 'dining_amount'
+);
+SET @sql := IF(
+  @has_dining_amount = 0,
+  'ALTER TABLE booking_order ADD COLUMN dining_amount DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER guests',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @has_activity_amount := (
+  SELECT COUNT(*)
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = 'farmstay_db'
+    AND TABLE_NAME = 'booking_order'
+    AND COLUMN_NAME = 'activity_amount'
+);
+SET @sql := IF(
+  @has_activity_amount = 0,
+  'ALTER TABLE booking_order ADD COLUMN activity_amount DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER dining_amount',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 CREATE TABLE IF NOT EXISTS booking_order_dining (
   id BIGINT NOT NULL AUTO_INCREMENT,

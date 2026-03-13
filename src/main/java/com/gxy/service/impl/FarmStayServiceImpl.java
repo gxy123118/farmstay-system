@@ -1,6 +1,7 @@
 package com.gxy.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.gxy.common.PageResponse;
 import com.gxy.common.auth.AuthGuard;
 import com.gxy.common.exception.BusinessException;
 import com.gxy.mapper.FarmStayMapper;
@@ -24,9 +25,26 @@ public class FarmStayServiceImpl implements FarmStayService {
     private static final String STATUS_OFFLINE = "OFFLINE";
 
     @Override
-    public List<FarmStayResponse> list(String city, String keyword, String priceLevel, String tag) {
-        List<FarmStay> farmStays = farmStayMapper.selectByConditions(STATUS_PUBLISHED, city, keyword, priceLevel, tag);
-        return farmStays.stream().map(this::toResponse).collect(Collectors.toList());
+    public PageResponse<FarmStayResponse> list(String city, String keyword, String priceLevel, String tag, Integer page, Integer pageSize) {
+        int currentPage = page == null || page < 1 ? 1 : page;
+        int currentPageSize = pageSize == null || pageSize < 1 ? 8 : Math.min(pageSize, 50);
+        int offset = (currentPage - 1) * currentPageSize;
+        List<FarmStay> farmStays = farmStayMapper.selectPageByConditions(
+                STATUS_PUBLISHED,
+                city,
+                keyword,
+                priceLevel,
+                tag,
+                offset,
+                currentPageSize
+        );
+        long total = farmStayMapper.countByConditions(STATUS_PUBLISHED, city, keyword, priceLevel, tag);
+        return PageResponse.of(
+                farmStays.stream().map(this::toResponse).collect(Collectors.toList()),
+                total,
+                currentPage,
+                currentPageSize
+        );
     }
 
     @Override

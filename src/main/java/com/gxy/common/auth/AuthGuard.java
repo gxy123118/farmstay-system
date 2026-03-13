@@ -7,10 +7,7 @@ import com.gxy.model.enums.UserType;
 import java.util.Objects;
 
 /**
- * 统一的登录身份校验工具。
- * <p>
- * 说明：当前项目将用户身份（游客/经营者）存储在 Sa-Token 的 Session 中（key: userType），
- * 因此这里通过 Session 值进行校验。
+ * 统一登录身份校验工具。
  */
 public final class AuthGuard {
 
@@ -20,24 +17,57 @@ public final class AuthGuard {
     }
 
     /**
-     * 仅允许游客执行。
+     * 至少游客权限（游客或经营者）可执行。
      */
     public static void enforceVisitor() {
-        enforceUserType(UserType.VISITOR, "仅游客可执行该操作");
+        enforceAtLeast(UserType.VISITOR, "仅游客及以上角色可执行该操作");
     }
 
     /**
-     * 仅允许经营者执行。
+     * 与 enforceVisitor 语义一致，便于新代码表达“继承式权限”。
+     */
+    public static void enforceAtLeastVisitor() {
+        enforceAtLeast(UserType.VISITOR, "仅游客及以上角色可执行该操作");
+    }
+
+    /**
+     * 仅经营者可执行。
      */
     public static void enforceOperator() {
         enforceUserType(UserType.OPERATOR, "仅经营者可执行该操作");
     }
 
     private static void enforceUserType(UserType expected, String message) {
-        Object userType = StpUtil.getSession().get(SESSION_KEY_USER_TYPE);
-        if (!Objects.equals(expected.getCode(), userType)) {
+        UserType current = currentUserType();
+        if (!Objects.equals(expected, current)) {
             throw new BusinessException(message);
         }
+    }
+
+    private static void enforceAtLeast(UserType expected, String message) {
+        UserType current = currentUserType();
+        if (rank(current) < rank(expected)) {
+            throw new BusinessException(message);
+        }
+    }
+
+    private static UserType currentUserType() {
+        Object userTypeValue = StpUtil.getSession().get(SESSION_KEY_USER_TYPE);
+        UserType current = UserType.fromCode(userTypeValue == null ? null : String.valueOf(userTypeValue));
+        if (current == null) {
+            throw new BusinessException("登录身份无效，请重新登录");
+        }
+        return current;
+    }
+
+    private static int rank(UserType userType) {
+        if (userType == UserType.OPERATOR) {
+            return 2;
+        }
+        if (userType == UserType.VISITOR) {
+            return 1;
+        }
+        return 0;
     }
 }
 
