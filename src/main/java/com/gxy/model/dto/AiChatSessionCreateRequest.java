@@ -6,13 +6,12 @@ import lombok.Data;
 public class AiChatSessionCreateRequest {
 
     /**
-     * 可选，指定上下文店铺。
+     * 可选，指定上下文民宿。
      */
     private Long farmStayId;
 
     /**
-     * 可选，会话场景（booking / policy / travel）。
+     * 可选，会话场景，例如 booking / policy / travel。
      */
     private String scene;
 }
-

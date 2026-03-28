@@ -19,3 +19,4 @@ public class LoginRequest {
     @NotBlank(message = "角色类型不能为空")
     private String userType;
 }
+

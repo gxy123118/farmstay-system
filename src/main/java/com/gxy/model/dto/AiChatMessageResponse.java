@@ -21,5 +21,6 @@ public class AiChatMessageResponse {
     private Double confidence;
 
     private String refuseReason;
-}
 
+    private Boolean fallback;
+}

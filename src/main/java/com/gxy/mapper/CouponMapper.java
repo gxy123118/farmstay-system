@@ -25,6 +25,6 @@ public interface CouponMapper {
             "</script>")
     List<Coupon> listAvailable(@Param("now") Date now, @Param("farmStayId") Long farmStayId);
 
-    @Update("UPDATE coupon SET used_count = used_count + 1, updated_at = NOW() WHERE id = #{id} AND used_count &lt; total_count")
+    @Update("UPDATE coupon SET used_count = used_count + 1, updated_at = NOW() WHERE id = #{id} AND used_count < total_count")
     int increaseUsedCount(@Param("id") Long id);
 }

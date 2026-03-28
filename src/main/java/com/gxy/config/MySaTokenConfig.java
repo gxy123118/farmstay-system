@@ -1,34 +1,57 @@
 package com.gxy.config;
 
-import cn.dev33.satoken.router.SaHttpMethod;
-import cn.dev33.satoken.router.SaRouter;
-import cn.dev33.satoken.stp.StpLogic;
 import cn.dev33.satoken.stp.StpUtil;
-import org.springframework.context.annotation.Bean;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import cn.dev33.satoken.interceptor.SaInterceptor;
 
+/**
+ * Sa-Token 登录拦截配置。
+ * 对 SSE 场景下的异步和错误分发直接放行，避免二次分发时再次触发线程上下文异常。
+ */
 @Configuration
 public class MySaTokenConfig implements WebMvcConfigurer {
-    // 注册sa-token的拦截器，打开注解式鉴权功能
+
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new SaInterceptor(handle -> {
-            SaRouter.match("/**")
-                    .notMatch(
-                            "/api/auth/**",
-                            "/api/home/**",
-                            "/api/farmstays/search",
-                            "/api/farmstays/**",
-                            "/swagger-ui.html",
-                            "/swagger-ui/**",
-                            "/v3/api-docs",
-                            "/v3/api-docs/**"
-                    )
-                    .notMatchMethod("OPTIONS")
-                    .check(r -> StpUtil.checkLogin());
-        })).addPathPatterns("/**");
+        registry.addInterceptor(new HandlerInterceptor() {
+            @Override
+            public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+                DispatcherType dispatcherType = request.getDispatcherType();
+                if (dispatcherType == DispatcherType.ASYNC
+                        || dispatcherType == DispatcherType.ERROR
+                        || dispatcherType == DispatcherType.FORWARD) {
+                    return true;
+                }
+                if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+                    return true;
+                }
+                if (isPublicPath(request.getRequestURI())) {
+                    return true;
+                }
+                StpUtil.checkLogin();
+                return true;
+            }
+        }).addPathPatterns("/**");
+    }
+
+    private boolean isPublicPath(String uri) {
+        if (uri == null) {
+            return false;
+        }
+        return uri.startsWith("/api/auth/")
+                || uri.startsWith("/api/home/")
+                || uri.equals("/api/account/recharges/alipay/notify")
+                || uri.equals("/api/farmstays/search")
+                || uri.startsWith("/api/farmstays/")
+                || uri.equals("/error")
+                || uri.equals("/swagger-ui.html")
+                || uri.startsWith("/swagger-ui/")
+                || uri.equals("/v3/api-docs")
+                || uri.startsWith("/v3/api-docs/");
     }
 }

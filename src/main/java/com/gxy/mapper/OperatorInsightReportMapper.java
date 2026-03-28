@@ -25,6 +25,9 @@ public interface OperatorInsightReportMapper {
     @Select("SELECT * FROM operator_insight_report WHERE farm_stay_id = #{farmStayId} AND deleted = 0 ORDER BY generated_at DESC, id DESC LIMIT 1")
     OperatorInsightReportRecord selectLatestByFarmStayId(@Param("farmStayId") Long farmStayId);
 
+    @Select("SELECT COALESCE(MAX(report_id), 5000) FROM operator_insight_report")
+    Long selectMaxReportId();
+
     @Update("UPDATE operator_insight_report SET deleted = 1, updated_at = NOW() WHERE farm_stay_id = #{farmStayId} AND report_id = #{reportId} AND deleted = 0")
     int softDeleteByReportId(@Param("farmStayId") Long farmStayId, @Param("reportId") Long reportId);
 }

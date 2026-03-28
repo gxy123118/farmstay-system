@@ -1,8 +1,7 @@
 package com.gxy.model.dto;
 
-import lombok.Data;
-
 import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
 
 @Data
 public class AiChatMessageRequest {

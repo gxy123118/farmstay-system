@@ -15,14 +15,14 @@ public interface UserMapper {
     /**
      * 根据账号和角色查询用户，如果是游客或经营者分别传入不同的userType
      */
-    @Select("SELECT id, username, password, salt, user_type, display_name, status FROM user_account " +
+    @Select("SELECT id, username, password, salt, user_type, display_name, status, balance FROM user_account " +
             "WHERE username = #{username} AND user_type = #{userType} LIMIT 1")
     User selectByUsernameAndType(@Param("username") String username, @Param("userType") String userType);
 
     @Select("SELECT COUNT(*) FROM user_account WHERE user_type = #{userType} AND status = 'ACTIVE'")
     long countByUserType(@Param("userType") String userType);
 
-    @Select("SELECT id, username, user_type, display_name, status FROM user_account WHERE id = #{id} LIMIT 1")
+    @Select("SELECT id, username, user_type, display_name, status, balance FROM user_account WHERE id = #{id} LIMIT 1")
     User selectById(@Param("id") Long id);
 
     @Insert("INSERT INTO user_account(username, password, salt, display_name, user_type, status, created_at, updated_at) " +
@@ -31,7 +31,7 @@ public interface UserMapper {
     int insertUser(User user);
 
     @Select("<script>" +
-            "SELECT id, username, display_name FROM user_account WHERE id IN " +
+            "SELECT id, username, display_name, balance FROM user_account WHERE id IN " +
             "<foreach collection='ids' item='id' open='(' separator=',' close=')'>#{id}</foreach>" +
             "</script>")
     List<User> selectByIds(@Param("ids") List<Long> ids);

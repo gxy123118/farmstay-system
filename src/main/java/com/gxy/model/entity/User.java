@@ -4,6 +4,7 @@ import com.gxy.model.enums.UserType;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 @Data
 public class User implements Serializable {
@@ -23,6 +24,8 @@ public class User implements Serializable {
     private String displayName;
 
     private String status;
+
+    private BigDecimal balance;
 
     public UserType toUserType() {
         return UserType.fromCode(userType);

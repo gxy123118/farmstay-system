@@ -70,4 +70,3 @@ public final class AuthGuard {
         return 0;
     }
 }
-

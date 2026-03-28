@@ -30,6 +30,7 @@ import com.gxy.model.entity.User;
 import com.gxy.model.dto.FarmStayResponse;
 import com.gxy.model.dto.RoomResponse;
 import com.gxy.model.vo.BookingDetailVo;
+import com.gxy.service.AccountService;
 import com.gxy.service.BookingService;
 import com.gxy.service.CouponService;
 import lombok.RequiredArgsConstructor;
@@ -63,6 +64,7 @@ public class BookingServiceImpl implements BookingService {
     private final BookingDiningMapper bookingDiningMapper;
     private final BookingActivityMapper bookingActivityMapper;
     private final UserMapper userMapper;
+    private final AccountService accountService;
 
     private static final String STATUS_CREATED = "CREATED";
     private static final String STATUS_PAID = "PAID";
@@ -192,20 +194,31 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional
     public PaymentResponse pay(PaymentRequest request) {
         AuthGuard.enforceVisitor();
+        if (!"BALANCE".equalsIgnoreCase(request.getChannel())) {
+            throw new BusinessException("当前仅支持余额支付");
+        }
+        Long visitorId = StpUtil.getLoginIdAsLong();
         BookingOrder order = bookingOrderMapper.selectById(request.getOrderId());
-        if (order == null || !Objects.equals(order.getVisitorId(), StpUtil.getLoginIdAsLong())) {
+        if (order == null || !Objects.equals(order.getVisitorId(), visitorId)) {
             throw new BusinessException("订单不存在或无权支付");
         }
         if (!Objects.equals(STATUS_CREATED, order.getStatus())) {
             throw new BusinessException("订单状态不可支付");
         }
+        BigDecimal currentBalance = accountService.payOrder(visitorId, order.getOrderNo(), order.getTotalAmount());
         bookingOrderMapper.updateStatus(request.getOrderId(), STATUS_PAID, request.getChannel());
-        return new PaymentResponse("模拟支付成功，支付渠道：" + request.getChannel(), STATUS_PAID);
+        PaymentResponse response = new PaymentResponse();
+        response.setPayInfo("余额支付成功");
+        response.setStatus(STATUS_PAID);
+        response.setCurrentBalance(currentBalance);
+        return response;
     }
 
     @Override
+    @Transactional
     public BookingResponse refund(Long orderId) {
         AuthGuard.enforceVisitor();
         Long visitorId = StpUtil.getLoginIdAsLong();
@@ -216,6 +229,7 @@ public class BookingServiceImpl implements BookingService {
         if (!Objects.equals(STATUS_PAID, order.getStatus())) {
             throw new BusinessException("当前订单状态无法退款");
         }
+        accountService.refundOrder(visitorId, order.getId(), order.getOrderNo(), order.getTotalAmount(), "订单退款退回余额");
         int changed = bookingOrderMapper.updateStatusByVisitor(orderId, visitorId, STATUS_REFUNDED);
         if (changed == 0) {
             throw new BusinessException("退款失败");

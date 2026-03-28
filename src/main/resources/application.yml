@@ -27,9 +27,18 @@ logging:
   level:
     com.gxy: debug
 app:
+  payment:
+    alipay:
+      enabled: true
+      gateway-url: https://openapi-sandbox.dl.alipaydev.com/gateway.do
+      app-id: 9021000162644762
+      private-key: MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCQZGAJ6M32BVhGJveZ/8g6yjGb66BxRqKcR4pIhNWOGCk3RY8MF/yVPyKAagdONV0Gyl1Mx0PW/ahzqYC6dX7tZumgusrQDxwGfnNSzOX1WGJl+h/j8kI7q2tr6b2BVNgEHCxKVXV0SEWS6CQnhHAHQ47DnHE8Lu+y7C/r3XqbPK2f0LUtlt6GiWldzhIjLrj3iii5mTb5Giy76Q1mtDkzrlOv0UIoMjJdZxKf/U2EX1E9JvbwFRjUUwjg7OT2Upw2GNRL0BnGAasCQcG5ZU/V1jGVA0yTKmUVff7ozfM/Gba3pj8BwyqXirLSHITeDPIz2ERSwWRN18gjxzoqEyKvAgMBAAECggEASvZRhdN/WgJcWc9RLHpGkX73UmN54FUzhr79Y7jSxfp1K2TJZxXs4+7rEo/5SvkZWrUkyv+IkM0P7zxIwITPaKDNGczgDjRJ8HUlmg8WM9G3BApfFBBpomDUXCn1YHeTzk5yEAVd/QioViR+4KU5JAxGyfcmMoCLoPBN0L4jMQP6z+/Q8wVT5XqEp6TJcOFrgS/SLZKhGWlGVxzuj2og8YDrRXyRqUHM5SZvu82fhqwbopjI0URfgwCrZW/P4IYM0YmoUH4mzORb2cqzhho7c3oVtkUX6MOmCS43qzj7XDI6ZWJ4CvQGZ/g9AITGxL5iqJN+Vo/cGrwDUYD59xYqgQKBgQDwrQ7s2c262qrE0WKmNanK+o9YjUoMAzxW0JSx3qIN9iKb4FNnpN3ml/PTAcZsV1SjfhhmY8nSgs0sDM6I7E4IiTj9MP5hBuGAWiaqqS4yym5lRUjknzSXbLrrFlzhM+D8/T0DSmpBRPMoNVlauDmanlJrZMGV/fQ9McSbIrlXmQKBgQCZlet9TkLMEdkmMANHpitUaq+q0B4uTQIDbA6r+gLBwVqf/HTzkc9Ipi9f3VD6bLLHo5NibMYuukHL7byRAZtCawjwIPhuU0vr1ExZFruldWxsisGVLIO/PJ+te8JXaDzURq8ThtyK+G7vIO6wfJW1jYf2WTdYA4DXWUTOpAgZhwKBgEC6qpr08SniCa+piNie8i2POeJdDZ8xd5b5viQgdoE+w4wcxxHG+487Ku6DObSFwFPAZBuVlwAxAbFpOFsHAu20ykj+VkwOJ7P3ixK3MZ+jZhGCkto6H1Dig1saxpwi8c3Y5gHuj6lCPAuCXafSiFuXXR9ZF9+ZT4jty6zVp/dxAoGANKAiKLWAPdx/w44AEbTmc+56ctUNAmBwqCuGe3cXKrzOCLPAfxUfKY2H/hkffi9wsudhwP/0iF5Z3T6Atk8OnBuA3IbvmR4BjbUY1A3uDivGEwsYebzfB9AGBrO5S6nz7eiqZM55E0U8/cMTBnYp9iOgytCXHhlVNHTqFsQt4lECgYEAzLe78/0FMyrskEaehSvLb6/HpisxpC/JJgFbJf0QESfGerBDoEEnUIREobDFcPu11jp/JNUoHJyTLlPiDQUrzwysSTNPdo53ukIDRBT1YxCi6KKd0aQEL1o5GZ0/7HzyrPkfc2AWA7zasAhon202KhmJxEp6J0CEdOu+8UE+RVA=
+      alipay-public-key: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAk2b+f3x97cM421ETjw68/4q6rU7wej8+qbUUhf9ptJFc7Xvv3/t0cCxGFPdQF36S1m9ShkJS0fBYgakLNPCtE41UQ+6VaoqsonbJaycd6IO0PRwhxoXtd48ZOiB0rtnYMv1iL/+Jecha5DJOBvnVgYLsHRuj0/jJxtfe5wJB5EF3v52tyKJED/WwsB7VDs+oXSOYPsBK8tdK5aUbJZPWm3rWtF9sAC4gJCKsPw07yd/knuJpaOkQ5MAB19AMxtuXpsip13o/qjP3HQhWTk1nD/m6TynRF++aWbq0WormKFl32lVaeoH8073TKOtROTn0lXiiezY+sn/azTlSA/r6vwIDAQAB
+      notify-url: https://109042c4.r40.cpolar.top/api/account/recharges/alipay/notify
+      sign-type: RSA2
+      charset: UTF-8
   ai:
     operator-insight:
       enabled: true
       model: MiniMax-M2.5
       max-review-samples: 20
-

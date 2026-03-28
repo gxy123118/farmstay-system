@@ -1,6 +1,7 @@
 package com.gxy.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
+import org.springframework.dao.DuplicateKeyException;
 import com.gxy.common.auth.AuthGuard;
 import com.gxy.common.exception.BusinessException;
 import com.gxy.config.OperatorInsightAiProperties;
@@ -70,7 +71,11 @@ public class OperatorInsightServiceImpl implements OperatorInsightService {
 
     private final AtomicLong reportIdGen = new AtomicLong(5000);
     private final Map<Long, CopyOnWriteArrayList<OperatorInsightReportResponse>> reportStore = new ConcurrentHashMap<>();
+    private volatile boolean reportIdSeedInitialized;
 
+    /**
+     * 主动生成一份新的运营洞察报告，并同时写入数据库和内存缓存。
+     */
     @Override
     public OperatorInsightReportResponse generate(Long farmStayId, Integer periodDays) {
         AuthGuard.enforceOperator();
@@ -87,6 +92,10 @@ public class OperatorInsightServiceImpl implements OperatorInsightService {
         return report;
     }
 
+    /**
+     * 获取最新一份运营洞察报告。
+     * 若当前民宿还没有历史报告，则自动生成一份默认周期报告。
+     */
     @Override
     public OperatorInsightReportResponse latest(Long farmStayId) {
         AuthGuard.enforceOperator();
@@ -103,6 +112,9 @@ public class OperatorInsightServiceImpl implements OperatorInsightService {
         return generate(farmStayId, 30);
     }
 
+    /**
+     * 查询历史报告列表。
+     */
     @Override
     public List<OperatorInsightReportResponse> history(Long farmStayId) {
         AuthGuard.enforceOperator();
@@ -116,6 +128,9 @@ public class OperatorInsightServiceImpl implements OperatorInsightService {
         return dbReports;
     }
 
+    /**
+     * 查询单条历史报告详情。
+     */
     @Override
     public OperatorInsightReportResponse historyDetail(Long farmStayId, Long reportId) {
         AuthGuard.enforceOperator();
@@ -136,6 +151,9 @@ public class OperatorInsightServiceImpl implements OperatorInsightService {
         return detail;
     }
 
+    /**
+     * 删除一条历史报告，同时清理数据库记录和缓存。
+     */
     @Override
     public boolean deleteHistory(Long farmStayId, Long reportId) {
         AuthGuard.enforceOperator();
@@ -155,6 +173,9 @@ public class OperatorInsightServiceImpl implements OperatorInsightService {
         return true;
     }
 
+    /**
+     * 获取最新报告中的问题主题列表，供前端做问题分布展示。
+     */
     @Override
     public List<OperatorInsightIssueResponse> issues(Long farmStayId) {
         return latest(farmStayId).getIssues();
@@ -617,25 +638,61 @@ public class OperatorInsightServiceImpl implements OperatorInsightService {
     }
 
     private void saveReport(FarmStay farmStay, OperatorInsightReportResponse report) {
+        syncReportIdSeedIfNeeded();
         try {
-            OperatorInsightReportRecord record = new OperatorInsightReportRecord();
-            record.setReportId(report.getReportId());
-            record.setFarmStayId(report.getFarmStayId());
-            record.setOwnerId(farmStay.getOwnerId());
-            record.setPeriodDays(report.getPeriodDays());
-            record.setGenerationMode(report.getGenerationMode());
-            record.setModel(report.getModel());
-            record.setReviewCount(report.getReviewCount());
-            record.setAverageRating(report.getAverageRating());
-            record.setSummary(report.getSummary());
-            record.setReportJson(objectMapper.writeValueAsString(report));
-            record.setGeneratedAt(report.getGeneratedAt());
-            operatorInsightReportMapper.insert(record);
+            insertReportRecord(farmStay, report);
+        } catch (DuplicateKeyException ex) {
+            log.warn("Operator insight reportId conflict detected, retrying with new reportId. farmStayId={}, oldReportId={}",
+                    farmStay.getId(), report.getReportId(), ex);
+            syncReportIdSeed();
+            report.setReportId(reportIdGen.incrementAndGet());
+            try {
+                insertReportRecord(farmStay, report);
+            } catch (Exception retryEx) {
+                log.error("Failed to persist operator insight report after retry. farmStayId={}, reportId={}",
+                        farmStay.getId(), report.getReportId(), retryEx);
+                throw new IllegalStateException("Failed to persist operator insight report", retryEx);
+            }
         } catch (Exception ex) {
             log.error("Failed to persist operator insight report. farmStayId={}, reportId={}",
                     farmStay.getId(), report.getReportId(), ex);
             throw new IllegalStateException("Failed to persist operator insight report", ex);
         }
+    }
+
+    private void insertReportRecord(FarmStay farmStay, OperatorInsightReportResponse report) throws Exception {
+        OperatorInsightReportRecord record = new OperatorInsightReportRecord();
+        record.setReportId(report.getReportId());
+        record.setFarmStayId(report.getFarmStayId());
+        record.setOwnerId(farmStay.getOwnerId());
+        record.setPeriodDays(report.getPeriodDays());
+        record.setGenerationMode(report.getGenerationMode());
+        record.setModel(report.getModel());
+        record.setReviewCount(report.getReviewCount());
+        record.setAverageRating(report.getAverageRating());
+        record.setSummary(report.getSummary());
+        record.setReportJson(objectMapper.writeValueAsString(report));
+        record.setGeneratedAt(report.getGeneratedAt());
+        operatorInsightReportMapper.insert(record);
+    }
+
+    private void syncReportIdSeedIfNeeded() {
+        if (reportIdSeedInitialized) {
+            return;
+        }
+        synchronized (reportIdGen) {
+            if (reportIdSeedInitialized) {
+                return;
+            }
+            syncReportIdSeed();
+            reportIdSeedInitialized = true;
+        }
+    }
+
+    private void syncReportIdSeed() {
+        Long maxReportId = operatorInsightReportMapper.selectMaxReportId();
+        long nextSeed = maxReportId == null ? 5000L : maxReportId;
+        reportIdGen.updateAndGet(current -> Math.max(current, nextSeed));
     }
 
     private OperatorInsightReportResponse loadLatestFromDb(Long farmStayId) {

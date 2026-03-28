@@ -15,6 +15,9 @@ public class AiChatSessionResponse {
 
     private String scene;
 
+    private String title;
+
+    private Date lastMessageAt;
+
     private Date createdAt;
 }
-

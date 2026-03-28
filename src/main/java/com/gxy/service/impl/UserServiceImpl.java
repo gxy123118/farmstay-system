@@ -114,6 +114,8 @@ public class UserServiceImpl implements UserService {
         response.setUsername(user.getUsername());
         response.setDisplayName(Optional.ofNullable(user.getDisplayName()).filter(name -> !name.isBlank()).orElse(user.getUsername()));
         response.setStatus(user.getStatus());
+        response.setBalance(user.getBalance());
         return response;
     }
 }
+

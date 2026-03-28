@@ -2,6 +2,8 @@ package com.gxy.model.dto;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class LoginResponse {
 
@@ -18,4 +20,6 @@ public class LoginResponse {
     private String displayName;
 
     private String status;
+
+    private BigDecimal balance;
 }

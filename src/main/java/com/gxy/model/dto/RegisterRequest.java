@@ -21,3 +21,4 @@ public class RegisterRequest {
     @NotBlank(message = "角色类型不能为空")
     private String userType;
 }
+

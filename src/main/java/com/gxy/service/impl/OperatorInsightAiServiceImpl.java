@@ -67,6 +67,10 @@ public class OperatorInsightAiServiceImpl implements OperatorInsightAiService {
         this.properties = properties;
     }
 
+    /**
+     * 调用大模型生成运营洞察结构化结果。
+     * 若模型未启用或客户端不可用，会直接抛异常并由上层走降级逻辑。
+     */
     @Override
     public OperatorInsightAiResult analyze(OperatorInsightAnalysisContext context) {
         if (!properties.isEnabled()) {
