@@ -35,29 +35,25 @@ public class AiKnowledgeAdminServiceImpl implements AiKnowledgeAdminService {
     private final FarmStayMapper farmStayMapper;
     private final AiKnowledgeRetriever aiKnowledgeRetriever;
 
-    /**
-     * 分页查询知识片段列表，支持关键字、类型、状态和民宿范围过滤。
-     */
     @Override
     public PageResponse<AiKnowledgeDocumentResponse> list(String keyword,
-                                                          String docType,
                                                           String scope,
                                                           String status,
                                                           Long farmStayId,
                                                           Boolean platformOnly,
                                                           Integer page,
                                                           Integer pageSize) {
-        AuthGuard.enforceOperator();
-        if (farmStayId != null) {
+        AuthGuard.enforceAtLeastOperator();
+        if (farmStayId != null && !AuthGuard.isAdmin()) {
             validateFarmStayOwnership(farmStayId);
         }
+
         int currentPage = page == null || page < 1 ? 1 : page;
         int currentPageSize = pageSize == null || pageSize < 1 ? 10 : Math.min(pageSize, 100);
         int offset = (currentPage - 1) * currentPageSize;
 
         List<AiKnowledgeDocument> documents = aiKnowledgeDocumentMapper.selectPage(
                 trim(keyword),
-                trim(docType),
                 trim(scope),
                 trim(status),
                 farmStayId,
@@ -67,12 +63,12 @@ public class AiKnowledgeAdminServiceImpl implements AiKnowledgeAdminService {
         );
         long total = aiKnowledgeDocumentMapper.countPage(
                 trim(keyword),
-                trim(docType),
                 trim(scope),
                 trim(status),
                 farmStayId,
                 platformOnly
         );
+
         List<AiKnowledgeDocumentResponse> responses = new ArrayList<>();
         for (AiKnowledgeDocument document : documents) {
             responses.add(toResponse(document));
@@ -80,31 +76,28 @@ public class AiKnowledgeAdminServiceImpl implements AiKnowledgeAdminService {
         return PageResponse.of(responses, total, currentPage, currentPageSize);
     }
 
-    /**
-     * 查询单条知识片段详情。
-     */
     @Override
     public AiKnowledgeDocumentResponse detail(Long id) {
-        AuthGuard.enforceOperator();
-        AiKnowledgeDocument document = requireAccessibleDocument(id);
-        return toResponse(document);
+        AuthGuard.enforceAtLeastOperator();
+        return toResponse(requireAccessibleDocument(id));
     }
 
-    /**
-     * 新增知识片段。
-     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public AiKnowledgeDocumentResponse create(AiKnowledgeDocumentRequest request) {
-        AuthGuard.enforceOperator();
+        AuthGuard.enforceAtLeastOperator();
         validateRequest(request);
-        long duplicate = aiKnowledgeDocumentMapper.countByKnowledgeCodeExcludingId(request.getKnowledgeCode().trim(), -1L);
+        long duplicate = aiKnowledgeDocumentMapper.countByKnowledgeCodeExcludingId(
+                request.getKnowledgeCode().trim(),
+                -1L
+        );
         if (duplicate > 0) {
             throw new BusinessException("knowledgeCode已存在");
         }
-        if (request.getFarmStayId() != null) {
+        if (request.getFarmStayId() != null && !AuthGuard.isAdmin()) {
             validateFarmStayOwnership(request.getFarmStayId());
         }
+
         Long userId = StpUtil.getLoginIdAsLong();
         AiKnowledgeDocument document = new AiKnowledgeDocument();
         fillDocument(document, request, userId);
@@ -115,22 +108,24 @@ public class AiKnowledgeAdminServiceImpl implements AiKnowledgeAdminService {
         return toResponse(requireDocument(document.getId()));
     }
 
-    /**
-     * 更新知识片段内容和元数据。
-     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public AiKnowledgeDocumentResponse update(Long id, AiKnowledgeDocumentRequest request) {
-        AuthGuard.enforceOperator();
+        AuthGuard.enforceAtLeastOperator();
         validateRequest(request);
         AiKnowledgeDocument existing = requireAccessibleDocument(id);
-        if (request.getFarmStayId() != null) {
+        if (request.getFarmStayId() != null && !AuthGuard.isAdmin()) {
             validateFarmStayOwnership(request.getFarmStayId());
         }
-        long duplicate = aiKnowledgeDocumentMapper.countByKnowledgeCodeExcludingId(request.getKnowledgeCode().trim(), id);
+
+        long duplicate = aiKnowledgeDocumentMapper.countByKnowledgeCodeExcludingId(
+                request.getKnowledgeCode().trim(),
+                id
+        );
         if (duplicate > 0) {
             throw new BusinessException("knowledgeCode已存在");
         }
+
         Long userId = StpUtil.getLoginIdAsLong();
         existing.setId(id);
         fillDocument(existing, request, userId);
@@ -140,24 +135,24 @@ public class AiKnowledgeAdminServiceImpl implements AiKnowledgeAdminService {
         return toResponse(requireDocument(id));
     }
 
-    /**
-     * 按 knowledgeCode 批量导入或更新知识片段。
-     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public List<AiKnowledgeDocumentResponse> batchUpsert(List<AiKnowledgeDocumentRequest> requests) {
-        AuthGuard.enforceOperator();
+        AuthGuard.enforceAtLeastOperator();
         if (requests == null || requests.isEmpty()) {
             return Collections.emptyList();
         }
+
         List<AiKnowledgeDocumentResponse> responses = new ArrayList<>();
         Long userId = StpUtil.getLoginIdAsLong();
         for (AiKnowledgeDocumentRequest request : requests) {
             validateRequest(request);
-            if (request.getFarmStayId() != null) {
+            if (request.getFarmStayId() != null && !AuthGuard.isAdmin()) {
                 validateFarmStayOwnership(request.getFarmStayId());
             }
-            AiKnowledgeDocument existing = aiKnowledgeDocumentMapper.selectAnyByKnowledgeCode(request.getKnowledgeCode().trim());
+
+            AiKnowledgeDocument existing =
+                    aiKnowledgeDocumentMapper.selectAnyByKnowledgeCode(request.getKnowledgeCode().trim());
             if (existing == null) {
                 AiKnowledgeDocument document = new AiKnowledgeDocument();
                 fillDocument(document, request, userId);
@@ -168,6 +163,7 @@ public class AiKnowledgeAdminServiceImpl implements AiKnowledgeAdminService {
                 responses.add(toResponse(requireDocument(document.getId())));
                 continue;
             }
+
             ensureDocumentAccessible(existing);
             fillDocument(existing, request, userId);
             if (aiKnowledgeDocumentMapper.updateById(existing) <= 0) {
@@ -178,18 +174,16 @@ public class AiKnowledgeAdminServiceImpl implements AiKnowledgeAdminService {
         return responses;
     }
 
-    /**
-     * 切换知识片段状态。
-     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public AiKnowledgeDocumentResponse updateStatus(Long id, String status) {
-        AuthGuard.enforceOperator();
-        AiKnowledgeDocument document = requireAccessibleDocument(id);
+        AuthGuard.enforceAtLeastOperator();
+        requireAccessibleDocument(id);
         String normalizedStatus = normalizeStatus(status);
         if (!STATUS_ACTIVE.equals(normalizedStatus) && !STATUS_INACTIVE.equals(normalizedStatus)) {
             throw new BusinessException("status仅支持ACTIVE或INACTIVE");
         }
+
         Long userId = StpUtil.getLoginIdAsLong();
         if (aiKnowledgeDocumentMapper.updateStatus(id, normalizedStatus, userId) <= 0) {
             throw new BusinessException("知识片段状态更新失败");
@@ -197,28 +191,21 @@ public class AiKnowledgeAdminServiceImpl implements AiKnowledgeAdminService {
         return toResponse(requireDocument(id));
     }
 
-    /**
-     * 用真实检索链路预览某个问题会命中哪些知识片段。
-     */
     @Override
     public List<AiCitationResponse> previewRetrieve(Long farmStayId, String scene, String question) {
-        AuthGuard.enforceOperator();
-        if (farmStayId != null) {
+        AuthGuard.enforceAtLeastOperator();
+        if (farmStayId != null && !AuthGuard.isAdmin()) {
             validateFarmStayOwnership(farmStayId);
         }
         return aiKnowledgeRetriever.retrieve(farmStayId, scene, question, true);
     }
 
-    /**
-     * 软删除知识片段，底层会把状态改为 INACTIVE。
-     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
-        AuthGuard.enforceOperator();
+        AuthGuard.enforceAtLeastOperator();
         AiKnowledgeDocument document = requireAccessibleDocument(id);
-        Long userId = StpUtil.getLoginIdAsLong();
-        if (aiKnowledgeDocumentMapper.updateStatus(document.getId(), STATUS_INACTIVE, userId) <= 0) {
+        if (aiKnowledgeDocumentMapper.deleteById(document.getId()) <= 0) {
             throw new BusinessException("知识片段删除失败");
         }
     }
@@ -230,6 +217,9 @@ public class AiKnowledgeAdminServiceImpl implements AiKnowledgeAdminService {
     }
 
     private void ensureDocumentAccessible(AiKnowledgeDocument document) {
+        if (AuthGuard.isAdmin()) {
+            return;
+        }
         if (document.getFarmStayId() != null) {
             validateFarmStayOwnership(document.getFarmStayId());
         }
@@ -271,10 +261,8 @@ public class AiKnowledgeAdminServiceImpl implements AiKnowledgeAdminService {
         document.setContent(request.getContent().trim());
         document.setSummary(trimToNull(request.getSummary()));
         document.setKeywords(trimToNull(request.getKeywords()));
-        document.setDocType(request.getDocType().trim());
         document.setScope(request.getScope().trim());
         document.setFarmStayId(request.getFarmStayId());
-        document.setPriority(request.getPriority() == null ? 0 : request.getPriority());
         document.setStatus(normalizeStatus(request.getStatus()));
         document.setUpdatedBy(userId);
     }
@@ -287,10 +275,8 @@ public class AiKnowledgeAdminServiceImpl implements AiKnowledgeAdminService {
         response.setContent(document.getContent());
         response.setSummary(document.getSummary());
         response.setKeywords(document.getKeywords());
-        response.setDocType(document.getDocType());
         response.setScope(document.getScope());
         response.setFarmStayId(document.getFarmStayId());
-        response.setPriority(document.getPriority());
         response.setStatus(document.getStatus());
         response.setCreatedBy(document.getCreatedBy());
         response.setUpdatedBy(document.getUpdatedBy());
@@ -314,8 +300,3 @@ public class AiKnowledgeAdminServiceImpl implements AiKnowledgeAdminService {
         return StringUtils.hasText(text) ? text.trim() : null;
     }
 }
-
-
-
-
-

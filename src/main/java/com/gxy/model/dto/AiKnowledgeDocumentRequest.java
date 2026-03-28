@@ -1,6 +1,5 @@
 package com.gxy.model.dto;
 
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -25,18 +24,11 @@ public class AiKnowledgeDocumentRequest {
     @Size(max = 500, message = "keywords长度不能超过500")
     private String keywords;
 
-    @NotBlank(message = "docType不能为空")
-    @Size(max = 32, message = "docType长度不能超过32")
-    private String docType;
-
     @NotBlank(message = "scope不能为空")
     @Size(max = 32, message = "scope长度不能超过32")
     private String scope;
 
     private Long farmStayId;
-
-    @Max(value = 999999, message = "priority过大")
-    private Integer priority;
 
     @Size(max = 16, message = "status长度不能超过16")
     private String status;

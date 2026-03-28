@@ -1,5 +1,6 @@
 package com.gxy.mapper;
 
+import com.gxy.model.dto.AdminReviewResponse;
 import com.gxy.model.entity.Review;
 import org.apache.ibatis.annotations.*;
 
@@ -30,4 +31,30 @@ public interface ReviewMapper {
 
     @Update("UPDATE review SET rating = #{rating}, content = #{content} WHERE order_id = #{orderId} AND visitor_id = #{visitorId}")
     int updateByOrder(@Param("orderId") Long orderId, @Param("visitorId") Long visitorId, @Param("rating") Integer rating, @Param("content") String content);
+
+    @Select("<script>" +
+            "SELECT r.id, r.order_id, r.farm_stay_id, f.name AS farm_stay_name, r.visitor_id, u.username AS visitor_username, " +
+            "r.rating, r.content, r.created_at " +
+            "FROM review r " +
+            "LEFT JOIN farmstay f ON r.farm_stay_id = f.id " +
+            "LEFT JOIN user_account u ON r.visitor_id = u.id " +
+            "WHERE 1=1 " +
+            "<if test=\"keyword != null and keyword != ''\">AND (r.content LIKE CONCAT('%', #{keyword}, '%') OR f.name LIKE CONCAT('%', #{keyword}, '%') OR u.username LIKE CONCAT('%', #{keyword}, '%')) </if>" +
+            "ORDER BY r.created_at DESC, r.id DESC LIMIT #{offset}, #{pageSize}" +
+            "</script>")
+    List<AdminReviewResponse> selectAdminPage(@Param("keyword") String keyword,
+                                              @Param("offset") int offset,
+                                              @Param("pageSize") int pageSize);
+
+    @Select("<script>" +
+            "SELECT COUNT(*) FROM review r " +
+            "LEFT JOIN farmstay f ON r.farm_stay_id = f.id " +
+            "LEFT JOIN user_account u ON r.visitor_id = u.id " +
+            "WHERE 1=1 " +
+            "<if test=\"keyword != null and keyword != ''\">AND (r.content LIKE CONCAT('%', #{keyword}, '%') OR f.name LIKE CONCAT('%', #{keyword}, '%') OR u.username LIKE CONCAT('%', #{keyword}, '%')) </if>" +
+            "</script>")
+    long countAdminPage(@Param("keyword") String keyword);
+
+    @Delete("DELETE FROM review WHERE id = #{id}")
+    int deleteById(@Param("id") Long id);
 }

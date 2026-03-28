@@ -27,4 +27,16 @@ public interface BookingOrderMapper {
 
     @Update("UPDATE booking_order SET status=#{status}, updated_at=NOW() WHERE id=#{id} AND visitor_id=#{visitorId}")
     int updateStatusByVisitor(@Param("id") Long id, @Param("visitorId") Long visitorId, @Param("status") String status);
+
+    @Select("SELECT COUNT(*) FROM booking_order")
+    long countAll();
+
+    @Select("SELECT COALESCE(SUM(total_amount), 0) FROM booking_order WHERE status IN ('PAID', 'COMPLETED', 'REFUNDED')")
+    java.math.BigDecimal sumTurnover();
+
+    @Select("SELECT COUNT(*) FROM booking_order WHERE status IN ('PAID', 'COMPLETED', 'REFUNDED')")
+    long countPaidLikeOrders();
+
+    @Select("SELECT COUNT(*) FROM booking_order WHERE status = 'REFUNDED'")
+    long countRefundedOrders();
 }

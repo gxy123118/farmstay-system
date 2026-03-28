@@ -47,6 +47,9 @@ public interface FarmStayMapper {
     @Select("SELECT COUNT(*) FROM farmstay WHERE status = #{status}")
     long countByStatus(@Param("status") String status);
 
+    @Select("SELECT COUNT(*) FROM farmstay")
+    long countAll();
+
     @Select("SELECT AVG(average_rating) FROM farmstay WHERE status = #{status}")
     Double averageRating(@Param("status") String status);
 

@@ -10,7 +10,6 @@ import java.util.List;
 public interface AiKnowledgeAdminService {
 
     PageResponse<AiKnowledgeDocumentResponse> list(String keyword,
-                                                   String docType,
                                                    String scope,
                                                    String status,
                                                    Long farmStayId,

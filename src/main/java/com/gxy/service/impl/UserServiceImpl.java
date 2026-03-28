@@ -24,10 +24,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public LoginResponse login(LoginRequest request) {
-        extracted(request.getUsername(), request.getPassword());
+        validateCredentials(request.getUsername(), request.getPassword());
         UserType userType = UserType.fromCode(request.getUserType());
         if (userType == null) {
-            throw new BusinessException("当前只支持游客或经营者登录");
+            throw new BusinessException("当前仅支持游客、经营者或管理员登录");
         }
         User user = userMapper.selectByUsernameAndType(request.getUsername(), userType.getCode());
         if (user == null) {
@@ -43,10 +43,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public LoginResponse register(RegisterRequest request) {
-        extracted(request.getUsername(), request.getPassword());
+        validateCredentials(request.getUsername(), request.getPassword());
         UserType userType = UserType.fromCode(request.getUserType());
-        if (userType == null) {
-            throw new BusinessException("当前只支持游客或经营者注册");
+        if (userType == null || userType == UserType.ADMIN) {
+            throw new BusinessException("当前仅支持游客或经营者注册");
         }
         if (userMapper.selectByUsernameAndType(request.getUsername(), userType.getCode()) != null) {
             throw new BusinessException("当前账号已存在");
@@ -75,16 +75,13 @@ public class UserServiceImpl implements UserService {
         return buildLoginResponse(user);
     }
 
-    private void extracted(String username, String password) {
-        // 验证账号格式：只能包含字母、数字和特定符号（如：!@#$%^&*()_+-=[]{}|;':\",./<>?）
+    private void validateCredentials(String username, String password) {
         if (username == null || username.trim().isEmpty()) {
             throw new BusinessException("账号不能为空");
         }
         if (!isValidAccount(username)) {
             throw new BusinessException("账号只能包含字母、数字和特定符号");
         }
-
-        // 验证密码格式：至少6位，只能包含字母、数字和特定符号
         if (password == null || password.length() < 6) {
             throw new BusinessException("密码长度不能少于6位");
         }
@@ -93,16 +90,14 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    // 验证账号是否只包含字母、数字和特定符号
     private boolean isValidAccount(String account) {
         return account != null && account.matches("^[a-zA-Z0-9!@#$%^&*()_+\\-=\\[\\]{}|;':\",./<>?`~]*$");
     }
 
-    // 验证密码是否只包含字母、数字和特定符号且长度>=6
     private boolean isValidPassword(String password) {
-        return password != null &&
-                password.length() >= 6 &&
-                password.matches("^[a-zA-Z0-9!@#$%^&*()_+\\-=\\[\\]{}|;':\",./<>?`~]*$");
+        return password != null
+                && password.length() >= 6
+                && password.matches("^[a-zA-Z0-9!@#$%^&*()_+\\-=\\[\\]{}|;':\",./<>?`~]*$");
     }
 
     private LoginResponse buildLoginResponse(User user) {
@@ -118,4 +113,3 @@ public class UserServiceImpl implements UserService {
         return response;
     }
 }
-

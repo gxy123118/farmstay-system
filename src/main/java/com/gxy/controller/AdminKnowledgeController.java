@@ -24,10 +24,10 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/ai/knowledge")
 @Validated
 @RequiredArgsConstructor
-public class AiKnowledgeAdminController {
+@RequestMapping("/api/admin/knowledge")
+public class AdminKnowledgeController {
 
     private final AiKnowledgeAdminService aiKnowledgeAdminService;
 

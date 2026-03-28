@@ -19,13 +19,9 @@ public class AiKnowledgeDocument {
 
     private String keywords;
 
-    private String docType;
-
     private String scope;
 
     private Long farmStayId;
-
-    private Integer priority;
 
     private String status;
 

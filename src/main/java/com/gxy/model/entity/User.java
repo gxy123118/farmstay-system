@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.Date;
 
 @Data
 public class User implements Serializable {
@@ -26,6 +27,10 @@ public class User implements Serializable {
     private String status;
 
     private BigDecimal balance;
+
+    private Date createdAt;
+
+    private Date updatedAt;
 
     public UserType toUserType() {
         return UserType.fromCode(userType);

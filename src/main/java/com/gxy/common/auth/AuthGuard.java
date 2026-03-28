@@ -16,25 +16,28 @@ public final class AuthGuard {
     private AuthGuard() {
     }
 
-    /**
-     * 至少游客权限（游客或经营者）可执行。
-     */
     public static void enforceVisitor() {
         enforceAtLeast(UserType.VISITOR, "仅游客及以上角色可执行该操作");
     }
 
-    /**
-     * 与 enforceVisitor 语义一致，便于新代码表达“继承式权限”。
-     */
     public static void enforceAtLeastVisitor() {
         enforceAtLeast(UserType.VISITOR, "仅游客及以上角色可执行该操作");
     }
 
-    /**
-     * 仅经营者可执行。
-     */
     public static void enforceOperator() {
         enforceUserType(UserType.OPERATOR, "仅经营者可执行该操作");
+    }
+
+    public static void enforceAtLeastOperator() {
+        enforceAtLeast(UserType.OPERATOR, "仅经营者及以上角色可执行该操作");
+    }
+
+    public static void enforceAdmin() {
+        enforceUserType(UserType.ADMIN, "仅管理员可执行该操作");
+    }
+
+    public static boolean isAdmin() {
+        return Objects.equals(UserType.ADMIN, currentUserType());
     }
 
     private static void enforceUserType(UserType expected, String message) {
@@ -61,6 +64,9 @@ public final class AuthGuard {
     }
 
     private static int rank(UserType userType) {
+        if (userType == UserType.ADMIN) {
+            return 3;
+        }
         if (userType == UserType.OPERATOR) {
             return 2;
         }

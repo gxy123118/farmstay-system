@@ -1,11 +1,12 @@
 package com.gxy.mapper;
 
 import com.gxy.model.entity.AiKnowledgeDocument;
+import org.apache.ibatis.annotations.Delete;
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
@@ -23,7 +24,7 @@ public interface AiKnowledgeDocumentMapper {
             "OR content LIKE CONCAT('%', #{keyword}, '%') " +
             "OR keywords LIKE CONCAT('%', #{keyword}, '%')) " +
             "</if>" +
-            "ORDER BY priority DESC, updated_at DESC " +
+            "ORDER BY updated_at DESC " +
             "LIMIT #{limit}" +
             "</script>")
     List<AiKnowledgeDocument> search(@Param("keyword") String keyword,
@@ -46,9 +47,6 @@ public interface AiKnowledgeDocumentMapper {
             "OR content LIKE CONCAT('%', #{keyword}, '%') " +
             "OR keywords LIKE CONCAT('%', #{keyword}, '%')) " +
             "</if>" +
-            "<if test='docType != null and docType != \"\"'>" +
-            "AND doc_type = #{docType} " +
-            "</if>" +
             "<if test='scope != null and scope != \"\"'>" +
             "AND scope = #{scope} " +
             "</if>" +
@@ -61,11 +59,10 @@ public interface AiKnowledgeDocumentMapper {
             "<if test='farmStayId == null and includePlatformOnly != null and includePlatformOnly'>" +
             "AND farm_stay_id IS NULL " +
             "</if>" +
-            "ORDER BY priority DESC, updated_at DESC " +
+            "ORDER BY updated_at DESC " +
             "LIMIT #{offset}, #{pageSize}" +
             "</script>")
     List<AiKnowledgeDocument> selectPage(@Param("keyword") String keyword,
-                                         @Param("docType") String docType,
                                          @Param("scope") String scope,
                                          @Param("status") String status,
                                          @Param("farmStayId") Long farmStayId,
@@ -82,9 +79,6 @@ public interface AiKnowledgeDocumentMapper {
             "OR content LIKE CONCAT('%', #{keyword}, '%') " +
             "OR keywords LIKE CONCAT('%', #{keyword}, '%')) " +
             "</if>" +
-            "<if test='docType != null and docType != \"\"'>" +
-            "AND doc_type = #{docType} " +
-            "</if>" +
             "<if test='scope != null and scope != \"\"'>" +
             "AND scope = #{scope} " +
             "</if>" +
@@ -99,7 +93,6 @@ public interface AiKnowledgeDocumentMapper {
             "</if>" +
             "</script>")
     long countPage(@Param("keyword") String keyword,
-                   @Param("docType") String docType,
                    @Param("scope") String scope,
                    @Param("status") String status,
                    @Param("farmStayId") Long farmStayId,
@@ -111,18 +104,21 @@ public interface AiKnowledgeDocumentMapper {
     @Select("SELECT COUNT(*) FROM ai_knowledge_document WHERE knowledge_code = #{knowledgeCode} AND id != #{excludeId}")
     long countByKnowledgeCodeExcludingId(@Param("knowledgeCode") String knowledgeCode, @Param("excludeId") Long excludeId);
 
-    @Insert("INSERT INTO ai_knowledge_document(knowledge_code, title, content, summary, keywords, doc_type, scope, farm_stay_id, priority, status, created_by, updated_by, created_at, updated_at) " +
-            "VALUES(#{knowledgeCode}, #{title}, #{content}, #{summary}, #{keywords}, #{docType}, #{scope}, #{farmStayId}, #{priority}, #{status}, #{createdBy}, #{updatedBy}, NOW(), NOW())")
+    @Insert("INSERT INTO ai_knowledge_document(knowledge_code, title, content, summary, keywords, scope, farm_stay_id, status, created_by, updated_by, created_at, updated_at) " +
+            "VALUES(#{knowledgeCode}, #{title}, #{content}, #{summary}, #{keywords}, #{scope}, #{farmStayId}, #{status}, #{createdBy}, #{updatedBy}, NOW(), NOW())")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     int insert(AiKnowledgeDocument document);
 
     @Update("UPDATE ai_knowledge_document SET " +
             "knowledge_code = #{knowledgeCode}, title = #{title}, content = #{content}, summary = #{summary}, keywords = #{keywords}, " +
-            "doc_type = #{docType}, scope = #{scope}, farm_stay_id = #{farmStayId}, priority = #{priority}, status = #{status}, " +
+            "scope = #{scope}, farm_stay_id = #{farmStayId}, status = #{status}, " +
             "updated_by = #{updatedBy}, updated_at = NOW() " +
             "WHERE id = #{id}")
     int updateById(AiKnowledgeDocument document);
 
     @Update("UPDATE ai_knowledge_document SET status = #{status}, updated_by = #{updatedBy}, updated_at = NOW() WHERE id = #{id}")
     int updateStatus(@Param("id") Long id, @Param("status") String status, @Param("updatedBy") Long updatedBy);
+
+    @Delete("DELETE FROM ai_knowledge_document WHERE id = #{id}")
+    int deleteById(@Param("id") Long id);
 }
