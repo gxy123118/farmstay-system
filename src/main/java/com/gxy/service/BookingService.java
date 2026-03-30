@@ -2,6 +2,7 @@ package com.gxy.service;
 
 import com.gxy.model.dto.BookingRequest;
 import com.gxy.model.dto.BookingResponse;
+import com.gxy.model.dto.OperatorOrderSummaryResponse;
 import com.gxy.model.dto.OrderStatusUpdateRequest;
 import com.gxy.model.dto.PaymentRequest;
 import com.gxy.model.dto.PaymentResponse;
@@ -24,4 +25,8 @@ public interface BookingService {
     List<BookingDetailVo> listMyOrders();
 
     List<BookingDetailVo> listOwnerOrders(Long farmStayId);
+
+    List<BookingDetailVo> listOperatorOrders(Long farmStayId, String status);
+
+    OperatorOrderSummaryResponse getOperatorOrderSummary(Long farmStayId);
 }

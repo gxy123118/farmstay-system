@@ -4,6 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.gxy.common.ApiResponse;
 import com.gxy.model.dto.BookingRequest;
 import com.gxy.model.dto.BookingResponse;
+import com.gxy.model.dto.OperatorOrderSummaryResponse;
 import com.gxy.model.vo.BookingDetailVo;
 import com.gxy.model.dto.OrderStatusUpdateRequest;
 import com.gxy.model.dto.PaymentRequest;
@@ -82,5 +83,22 @@ public class BookingController {
     @GetMapping
     public ApiResponse<List<BookingDetailVo>> ownerOrders(@RequestParam Long farmStayId) {
         return ApiResponse.ok(bookingService.listOwnerOrders(farmStayId));
+    }
+
+    /**
+     * 缁忚惀鑰呮煡鐪嬪悕涓嬫墍鏈夊啘瀹朵箰璁㈠崟锛屽彲閫夋寜鍗曚釜搴楅摵鍜岀姸鎬佺瓫閫夈€?
+     */
+    @GetMapping("/operator/orders")
+    public ApiResponse<List<BookingDetailVo>> operatorOrders(@RequestParam(required = false) Long farmStayId,
+                                                             @RequestParam(required = false) String status) {
+        return ApiResponse.ok(bookingService.listOperatorOrders(farmStayId, status));
+    }
+
+    /**
+     * 缁忚惀鑰呮煡鐪嬪悕涓嬪簵閾虹殑浜ゆ槗缁熻銆?
+     */
+    @GetMapping("/operator/summary")
+    public ApiResponse<OperatorOrderSummaryResponse> operatorOrderSummary(@RequestParam(required = false) Long farmStayId) {
+        return ApiResponse.ok(bookingService.getOperatorOrderSummary(farmStayId));
     }
 }

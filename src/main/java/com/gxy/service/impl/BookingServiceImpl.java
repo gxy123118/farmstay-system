@@ -15,6 +15,7 @@ import com.gxy.mapper.DiningMapper;
 import com.gxy.mapper.UserMapper;
 import com.gxy.model.dto.BookingRequest;
 import com.gxy.model.dto.BookingResponse;
+import com.gxy.model.dto.OperatorOrderSummaryResponse;
 import com.gxy.model.dto.OrderStatusUpdateRequest;
 import com.gxy.model.dto.PaymentRequest;
 import com.gxy.model.dto.PaymentResponse;
@@ -265,6 +266,58 @@ public class BookingServiceImpl implements BookingService {
         return buildDetailList(bookingOrderMapper.selectByFarmStay(farmStayId));
     }
 
+    @Override
+    public List<BookingDetailVo> listOperatorOrders(Long farmStayId, String status) {
+        AuthGuard.enforceOperator();
+        List<FarmStay> farmStays = getManagedFarmStays(farmStayId);
+        if (farmStays.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Long> farmStayIds = farmStays.stream().map(FarmStay::getId).collect(Collectors.toList());
+        return buildDetailList(bookingOrderMapper.selectByFarmStayIds(farmStayIds, status));
+    }
+
+    @Override
+    public OperatorOrderSummaryResponse getOperatorOrderSummary(Long farmStayId) {
+        AuthGuard.enforceOperator();
+        List<FarmStay> farmStays = getManagedFarmStays(farmStayId);
+        OperatorOrderSummaryResponse response = new OperatorOrderSummaryResponse();
+        response.setFarmStayCount((long) farmStays.size());
+        if (farmStays.isEmpty()) {
+            response.setOrderCount(0L);
+            response.setPaidOrderCount(0L);
+            response.setRefundedOrderCount(0L);
+            response.setGrossTransactionAmount(BigDecimal.ZERO);
+            response.setRefundAmount(BigDecimal.ZERO);
+            response.setNetTransactionAmount(BigDecimal.ZERO);
+            response.setRefundRate(0D);
+            return response;
+        }
+
+        List<Long> farmStayIds = farmStays.stream().map(FarmStay::getId).collect(Collectors.toList());
+        List<BookingOrder> orders = bookingOrderMapper.selectByFarmStayIds(farmStayIds, null);
+        long orderCount = orders.size();
+        long paidOrderCount = orders.stream().filter(this::isPaidLikeOrder).count();
+        long refundedOrderCount = orders.stream().filter(order -> STATUS_REFUNDED.equals(order.getStatus())).count();
+        BigDecimal grossTransactionAmount = sumAmount(orders.stream()
+                .filter(this::isPaidLikeOrder)
+                .map(BookingOrder::getTotalAmount)
+                .collect(Collectors.toList()));
+        BigDecimal refundAmount = sumAmount(orders.stream()
+                .filter(order -> STATUS_REFUNDED.equals(order.getStatus()))
+                .map(BookingOrder::getTotalAmount)
+                .collect(Collectors.toList()));
+
+        response.setOrderCount(orderCount);
+        response.setPaidOrderCount(paidOrderCount);
+        response.setRefundedOrderCount(refundedOrderCount);
+        response.setGrossTransactionAmount(grossTransactionAmount);
+        response.setRefundAmount(refundAmount);
+        response.setNetTransactionAmount(grossTransactionAmount.subtract(refundAmount));
+        response.setRefundRate(orderCount == 0 ? 0D : refundedOrderCount * 100D / orderCount);
+        return response;
+    }
+
     private long calculateNights(Date checkIn, Date checkOut) {
         return ChronoUnit.DAYS.between(
                 checkIn.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
@@ -277,6 +330,22 @@ public class BookingServiceImpl implements BookingService {
         if (farmStay == null) {
             throw new BusinessException("只能管理自己名下的订单");
         }
+    }
+
+    private List<FarmStay> getManagedFarmStays(Long farmStayId) {
+        Long ownerId = StpUtil.getLoginIdAsLong();
+        if (farmStayId != null) {
+            FarmStay farmStay = farmStayMapper.selectByIdAndOwner(farmStayId, ownerId);
+            if (farmStay == null) {
+                throw new BusinessException("鍙兘鏌ョ湅鑷繁鍚嶄笅鍐滃涔愮殑浜ゆ槗鏁版嵁");
+            }
+            return Collections.singletonList(farmStay);
+        }
+        return farmStayMapper.selectByOwner(ownerId);
+    }
+
+    private boolean isPaidLikeOrder(BookingOrder order) {
+        return STATUS_PAID.equals(order.getStatus()) || STATUS_REFUNDED.equals(order.getStatus());
     }
 
     private BookingResponse toResponse(BookingOrder order) {

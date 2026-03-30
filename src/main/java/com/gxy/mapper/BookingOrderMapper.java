@@ -22,6 +22,15 @@ public interface BookingOrderMapper {
     @Select("SELECT * FROM booking_order WHERE farm_stay_id = #{farmStayId} ORDER BY created_at DESC")
     List<BookingOrder> selectByFarmStay(@Param("farmStayId") Long farmStayId);
 
+    @Select("<script>" +
+            "SELECT * FROM booking_order WHERE farm_stay_id IN " +
+            "<foreach collection='farmStayIds' item='farmStayId' open='(' separator=',' close=')'>#{farmStayId}</foreach> " +
+            "<if test=\"status != null and status != ''\">AND status = #{status}</if> " +
+            "ORDER BY created_at DESC" +
+            "</script>")
+    List<BookingOrder> selectByFarmStayIds(@Param("farmStayIds") List<Long> farmStayIds,
+                                           @Param("status") String status);
+
     @Update("UPDATE booking_order SET status=#{status}, payment_channel=#{paymentChannel}, updated_at=NOW() WHERE id=#{id}")
     int updateStatus(@Param("id") Long id, @Param("status") String status, @Param("paymentChannel") String paymentChannel);
 
