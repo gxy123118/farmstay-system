@@ -34,8 +34,22 @@ public interface BookingOrderMapper {
     @Update("UPDATE booking_order SET status=#{status}, payment_channel=#{paymentChannel}, updated_at=NOW() WHERE id=#{id}")
     int updateStatus(@Param("id") Long id, @Param("status") String status, @Param("paymentChannel") String paymentChannel);
 
+    @Update("UPDATE booking_order SET status=#{targetStatus}, payment_channel=#{paymentChannel}, updated_at=NOW() " +
+            "WHERE id=#{id} AND status=#{currentStatus}")
+    int updateStatusByCurrent(@Param("id") Long id,
+                              @Param("currentStatus") String currentStatus,
+                              @Param("targetStatus") String targetStatus,
+                              @Param("paymentChannel") String paymentChannel);
+
     @Update("UPDATE booking_order SET status=#{status}, updated_at=NOW() WHERE id=#{id} AND visitor_id=#{visitorId}")
     int updateStatusByVisitor(@Param("id") Long id, @Param("visitorId") Long visitorId, @Param("status") String status);
+
+    @Update("UPDATE booking_order SET status=#{targetStatus}, updated_at=NOW() " +
+            "WHERE id=#{id} AND visitor_id=#{visitorId} AND status=#{currentStatus}")
+    int updateStatusByVisitorAndCurrent(@Param("id") Long id,
+                                        @Param("visitorId") Long visitorId,
+                                        @Param("currentStatus") String currentStatus,
+                                        @Param("targetStatus") String targetStatus);
 
     @Select("SELECT COUNT(*) FROM booking_order")
     long countAll();

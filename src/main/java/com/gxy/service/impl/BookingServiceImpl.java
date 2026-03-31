@@ -8,28 +8,28 @@ import com.gxy.mapper.ActivityMapper;
 import com.gxy.mapper.BookingActivityMapper;
 import com.gxy.mapper.BookingDiningMapper;
 import com.gxy.mapper.BookingOrderMapper;
+import com.gxy.mapper.DiningMapper;
 import com.gxy.mapper.FarmStayMapper;
 import com.gxy.mapper.ReviewMapper;
 import com.gxy.mapper.RoomTypeMapper;
-import com.gxy.mapper.DiningMapper;
 import com.gxy.mapper.UserMapper;
 import com.gxy.model.dto.BookingRequest;
 import com.gxy.model.dto.BookingResponse;
+import com.gxy.model.dto.FarmStayResponse;
 import com.gxy.model.dto.OperatorOrderSummaryResponse;
 import com.gxy.model.dto.OrderStatusUpdateRequest;
 import com.gxy.model.dto.PaymentRequest;
 import com.gxy.model.dto.PaymentResponse;
+import com.gxy.model.dto.RoomResponse;
 import com.gxy.model.entity.ActivityItem;
 import com.gxy.model.entity.BookingActivityItem;
 import com.gxy.model.entity.BookingDiningItem;
 import com.gxy.model.entity.BookingOrder;
 import com.gxy.model.entity.DiningItem;
 import com.gxy.model.entity.FarmStay;
-import com.gxy.model.entity.RoomType;
 import com.gxy.model.entity.Review;
+import com.gxy.model.entity.RoomType;
 import com.gxy.model.entity.User;
-import com.gxy.model.dto.FarmStayResponse;
-import com.gxy.model.dto.RoomResponse;
 import com.gxy.model.vo.BookingDetailVo;
 import com.gxy.service.AccountService;
 import com.gxy.service.BookingService;
@@ -55,6 +55,12 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class BookingServiceImpl implements BookingService {
 
+    private static final String STATUS_CREATED = "CREATED";
+    private static final String STATUS_PAID = "PAID";
+    private static final String STATUS_COMPLETED = "COMPLETED";
+    private static final String STATUS_CANCELLED = "CANCELLED";
+    private static final String STATUS_REFUNDED = "REFUNDED";
+
     private final BookingOrderMapper bookingOrderMapper;
     private final RoomTypeMapper roomTypeMapper;
     private final FarmStayMapper farmStayMapper;
@@ -66,11 +72,6 @@ public class BookingServiceImpl implements BookingService {
     private final BookingActivityMapper bookingActivityMapper;
     private final UserMapper userMapper;
     private final AccountService accountService;
-
-    private static final String STATUS_CREATED = "CREATED";
-    private static final String STATUS_PAID = "PAID";
-    private static final String STATUS_CANCELLED = "CANCELLED";
-    private static final String STATUS_REFUNDED = "REFUNDED";
 
     @Override
     @Transactional
@@ -84,9 +85,10 @@ public class BookingServiceImpl implements BookingService {
         if (roomType == null || !Objects.equals(roomType.getFarmStayId(), request.getFarmStayId())) {
             throw new BusinessException("房型不存在或不属于该农家乐");
         }
+
         long nights = calculateNights(request.getCheckInDate(), request.getCheckOutDate());
         if (nights <= 0) {
-            throw new BusinessException("退房日期必须晚于入住日期");
+            throw new BusinessException("离店日期必须晚于入住日期");
         }
 
         List<Long> diningIds = distinctIds(request.getDiningItemIds());
@@ -183,15 +185,14 @@ public class BookingServiceImpl implements BookingService {
         if (order == null || !Objects.equals(visitorId, order.getVisitorId())) {
             throw new BusinessException("订单不存在或无权取消");
         }
-        if (Objects.equals(STATUS_PAID, order.getStatus())) {
-            throw new BusinessException("已支付订单请联系客服处理退款");
+        if (STATUS_PAID.equals(order.getStatus()) || STATUS_COMPLETED.equals(order.getStatus())) {
+            throw new BusinessException("已支付或已完成订单不能直接取消");
         }
-        int changed = bookingOrderMapper.updateStatusByVisitor(orderId, visitorId, STATUS_CANCELLED);
+        int changed = bookingOrderMapper.updateStatusByVisitorAndCurrent(orderId, visitorId, STATUS_CREATED, STATUS_CANCELLED);
         if (changed == 0) {
-            throw new BusinessException("订单取消失败或无权取消");
+            throw new BusinessException("订单取消失败或状态已变更");
         }
-        BookingOrder latest = bookingOrderMapper.selectById(orderId);
-        return toResponse(latest);
+        return toResponse(bookingOrderMapper.selectById(orderId));
     }
 
     @Override
@@ -206,11 +207,14 @@ public class BookingServiceImpl implements BookingService {
         if (order == null || !Objects.equals(order.getVisitorId(), visitorId)) {
             throw new BusinessException("订单不存在或无权支付");
         }
-        if (!Objects.equals(STATUS_CREATED, order.getStatus())) {
-            throw new BusinessException("订单状态不可支付");
+        if (!STATUS_CREATED.equals(order.getStatus())) {
+            throw new BusinessException("当前订单状态不可支付");
         }
         BigDecimal currentBalance = accountService.payOrder(visitorId, order.getOrderNo(), order.getTotalAmount());
-        bookingOrderMapper.updateStatus(request.getOrderId(), STATUS_PAID, request.getChannel());
+        int changed = bookingOrderMapper.updateStatusByCurrent(order.getId(), STATUS_CREATED, STATUS_PAID, request.getChannel());
+        if (changed == 0) {
+            throw new BusinessException("订单状态已变更，请刷新后重试");
+        }
         PaymentResponse response = new PaymentResponse();
         response.setPayInfo("余额支付成功");
         response.setStatus(STATUS_PAID);
@@ -227,16 +231,44 @@ public class BookingServiceImpl implements BookingService {
         if (order == null || !Objects.equals(order.getVisitorId(), visitorId)) {
             throw new BusinessException("订单不存在或无权退款");
         }
-        if (!Objects.equals(STATUS_PAID, order.getStatus())) {
-            throw new BusinessException("当前订单状态无法退款");
+        if (!STATUS_PAID.equals(order.getStatus())) {
+            throw new BusinessException("只有已支付且未完成的订单允许退款");
         }
         accountService.refundOrder(visitorId, order.getId(), order.getOrderNo(), order.getTotalAmount(), "订单退款退回余额");
-        int changed = bookingOrderMapper.updateStatusByVisitor(orderId, visitorId, STATUS_REFUNDED);
+        int changed = bookingOrderMapper.updateStatusByVisitorAndCurrent(orderId, visitorId, STATUS_PAID, STATUS_REFUNDED);
         if (changed == 0) {
-            throw new BusinessException("退款失败");
+            throw new BusinessException("退款失败，请刷新后重试");
         }
-        BookingOrder latest = bookingOrderMapper.selectById(orderId);
-        return toResponse(latest);
+        return toResponse(bookingOrderMapper.selectById(orderId));
+    }
+
+    @Override
+    @Transactional
+    public BookingResponse complete(Long orderId) {
+        AuthGuard.enforceOperator();
+        BookingOrder order = bookingOrderMapper.selectById(orderId);
+        if (order == null) {
+            throw new BusinessException("订单不存在");
+        }
+        FarmStay farmStay = farmStayMapper.selectByIdAndOwner(order.getFarmStayId(), StpUtil.getLoginIdAsLong());
+        if (farmStay == null) {
+            throw new BusinessException("只能核销自己名下农家乐的订单");
+        }
+        if (!STATUS_PAID.equals(order.getStatus())) {
+            throw new BusinessException("只有已支付订单可以核销完成");
+        }
+        int changed = bookingOrderMapper.updateStatusByCurrent(orderId, STATUS_PAID, STATUS_COMPLETED, order.getPaymentChannel());
+        if (changed == 0) {
+            throw new BusinessException("订单状态已变更，请刷新后重试");
+        }
+        accountService.settleOrderToOperator(
+                farmStay.getOwnerId(),
+                order.getId(),
+                order.getOrderNo(),
+                order.getTotalAmount(),
+                "订单完成结算入账"
+        );
+        return toResponse(bookingOrderMapper.selectById(orderId));
     }
 
     @Override
@@ -248,15 +280,13 @@ public class BookingServiceImpl implements BookingService {
         }
         ensureOwner(order.getFarmStayId());
         bookingOrderMapper.updateStatus(request.getOrderId(), request.getStatus(), request.getPaymentChannel());
-        BookingOrder latest = bookingOrderMapper.selectById(request.getOrderId());
-        return toResponse(latest);
+        return toResponse(bookingOrderMapper.selectById(request.getOrderId()));
     }
 
     @Override
     public List<BookingDetailVo> listMyOrders() {
         AuthGuard.enforceVisitor();
-        Long visitorId = StpUtil.getLoginIdAsLong();
-        return buildDetailList(bookingOrderMapper.selectByVisitor(visitorId));
+        return buildDetailList(bookingOrderMapper.selectByVisitor(StpUtil.getLoginIdAsLong()));
     }
 
     @Override
@@ -314,14 +344,15 @@ public class BookingServiceImpl implements BookingService {
         response.setGrossTransactionAmount(grossTransactionAmount);
         response.setRefundAmount(refundAmount);
         response.setNetTransactionAmount(grossTransactionAmount.subtract(refundAmount));
-        response.setRefundRate(orderCount == 0 ? 0D : refundedOrderCount * 100D / orderCount);
+        response.setRefundRate(orderCount == 0 ? 0D : (double) refundedOrderCount / orderCount);
         return response;
     }
 
     private long calculateNights(Date checkIn, Date checkOut) {
         return ChronoUnit.DAYS.between(
                 checkIn.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
-                checkOut.toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+                checkOut.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+        );
     }
 
     private void ensureOwner(Long farmStayId) {
@@ -337,7 +368,7 @@ public class BookingServiceImpl implements BookingService {
         if (farmStayId != null) {
             FarmStay farmStay = farmStayMapper.selectByIdAndOwner(farmStayId, ownerId);
             if (farmStay == null) {
-                throw new BusinessException("鍙兘鏌ョ湅鑷繁鍚嶄笅鍐滃涔愮殑浜ゆ槗鏁版嵁");
+                throw new BusinessException("只能查看自己名下农家乐的交易数据");
             }
             return Collections.singletonList(farmStay);
         }
@@ -345,7 +376,9 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private boolean isPaidLikeOrder(BookingOrder order) {
-        return STATUS_PAID.equals(order.getStatus()) || STATUS_REFUNDED.equals(order.getStatus());
+        return STATUS_PAID.equals(order.getStatus())
+                || STATUS_COMPLETED.equals(order.getStatus())
+                || STATUS_REFUNDED.equals(order.getStatus());
     }
 
     private BookingResponse toResponse(BookingOrder order) {
@@ -394,6 +427,7 @@ public class BookingServiceImpl implements BookingService {
                     .stream()
                     .collect(Collectors.groupingBy(BookingActivityItem::getOrderId));
         }
+
         Map<Long, User> finalUserMap = userMap;
         Map<Long, Review> finalReviewMap = reviewMap;
         Map<Long, List<BookingDiningItem>> finalDiningMap = diningMap;
@@ -485,14 +519,14 @@ public class BookingServiceImpl implements BookingService {
                 .collect(Collectors.toList());
     }
 
-    private BigDecimal sumAmount(List<BigDecimal> prices) {
+    private BigDecimal sumAmount(List<BigDecimal> amounts) {
         BigDecimal total = BigDecimal.ZERO;
-        if (prices == null) {
+        if (amounts == null) {
             return total;
         }
-        for (BigDecimal price : prices) {
-            if (price != null) {
-                total = total.add(price);
+        for (BigDecimal amount : amounts) {
+            if (amount != null) {
+                total = total.add(amount);
             }
         }
         return total;

@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS withdraw_order (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT 'Primary key',
+    withdraw_no VARCHAR(64) NOT NULL COMMENT 'Withdrawal order number',
+    user_id BIGINT NOT NULL COMMENT 'Operator user ID',
+    amount DECIMAL(10, 2) NOT NULL COMMENT 'Withdrawal amount',
+    channel VARCHAR(32) NOT NULL COMMENT 'Withdrawal channel, currently ALIPAY only',
+    account_name VARCHAR(64) NOT NULL COMMENT 'Payee account name',
+    account_no VARCHAR(128) NOT NULL COMMENT 'Payee account number',
+    status VARCHAR(32) NOT NULL COMMENT 'PENDING/APPROVED/SUCCESS/REJECTED',
+    remark VARCHAR(255) NULL COMMENT 'Operator withdrawal remark',
+    review_remark VARCHAR(255) NULL COMMENT 'Admin review or transfer remark',
+    transfer_no VARCHAR(128) NULL COMMENT 'Manual transfer voucher number',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Creation time',
+    reviewed_at DATETIME NULL COMMENT 'Review time',
+    paid_at DATETIME NULL COMMENT 'Manual payout completion time',
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Update time',
+    UNIQUE KEY uk_withdraw_order_no (withdraw_no),
+    KEY idx_withdraw_order_user_id (user_id),
+    KEY idx_withdraw_order_status (status)
+) COMMENT='Operator withdrawal application table';

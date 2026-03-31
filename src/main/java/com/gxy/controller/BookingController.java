@@ -54,6 +54,14 @@ public class BookingController {
     }
 
     /**
+     * 缁忚惀鑰呮牳閿€宸叉敮浠樿鍗曪紝瀹屾垚灞ヨ骞剁粨绠楀埌缁忚惀鑰呬綑棰濄€?
+     */
+    @PostMapping("/{orderId}/complete")
+    public ApiResponse<BookingResponse> complete(@PathVariable Long orderId) {
+        return ApiResponse.ok(bookingService.complete(orderId));
+    }
+
+    /**
      * 支付接口框架（模拟支付成功）
      */
     @PostMapping("/pay")

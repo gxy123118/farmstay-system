@@ -22,6 +22,8 @@ public interface BookingService {
 
     BookingResponse refund(Long orderId);
 
+    BookingResponse complete(Long orderId);
+
     List<BookingDetailVo> listMyOrders();
 
     List<BookingDetailVo> listOwnerOrders(Long farmStayId);

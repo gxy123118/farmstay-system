@@ -5,6 +5,8 @@ import com.gxy.model.dto.BalanceFlowResponse;
 import com.gxy.model.dto.BalanceResponse;
 import com.gxy.model.dto.RechargeCreateRequest;
 import com.gxy.model.dto.RechargeResponse;
+import com.gxy.model.dto.WithdrawCreateRequest;
+import com.gxy.model.dto.WithdrawResponse;
 import com.gxy.service.AccountService;
 import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpServletRequest;
@@ -52,6 +54,16 @@ public class AccountController {
     @PostMapping("/recharges/{rechargeNo}/mock-pay")
     public ApiResponse<RechargeResponse> mockPay(@PathVariable String rechargeNo) {
         return ApiResponse.ok(accountService.mockPayRecharge(rechargeNo));
+    }
+
+    @PostMapping("/withdraws")
+    public ApiResponse<WithdrawResponse> createWithdraw(@Valid @RequestBody WithdrawCreateRequest request) {
+        return ApiResponse.ok(accountService.createWithdraw(request));
+    }
+
+    @GetMapping("/withdraws")
+    public ApiResponse<List<WithdrawResponse>> listWithdraws() {
+        return ApiResponse.ok(accountService.listWithdraws());
     }
 
     @PostMapping("/recharges/alipay/notify")
