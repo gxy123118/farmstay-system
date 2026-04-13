@@ -22,4 +22,10 @@ public interface RoomTypeMapper {
     @Update("UPDATE room_type SET name=#{name}, description=#{description}, bed_type=#{bedType}, max_guests=#{maxGuests}, price=#{price}, " +
             "stock=#{stock}, tags=#{tags}, status=#{status}, updated_at=NOW() WHERE id=#{id} AND farm_stay_id=#{farmStayId}")
     int update(RoomType roomType);
+
+    @Delete("DELETE FROM room_type WHERE id = #{id} AND farm_stay_id = #{farmStayId}")
+    int deleteByIdAndFarmStay(@Param("id") Long id, @Param("farmStayId") Long farmStayId);
+
+    @Delete("DELETE FROM room_type WHERE farm_stay_id = #{farmStayId}")
+    int deleteByFarmStayId(@Param("farmStayId") Long farmStayId);
 }

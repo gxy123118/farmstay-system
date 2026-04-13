@@ -20,22 +20,29 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
+    private static final String STATUS_ACTIVE = "ACTIVE";
+
     private final UserMapper userMapper;
 
     @Override
     public LoginResponse login(LoginRequest request) {
         validateCredentials(request.getUsername(), request.getPassword());
+
         UserType userType = UserType.fromCode(request.getUserType());
         if (userType == null) {
-            throw new BusinessException("当前仅支持游客、经营者或管理员登录");
+            throw new BusinessException("Only visitor/operator/admin can login");
         }
+
         User user = userMapper.selectByUsernameAndType(request.getUsername(), userType.getCode());
         if (user == null) {
-            throw new BusinessException("账号或角色不存在");
+            throw new BusinessException("Account or role not found");
         }
+        ensureUserActive(user);
+
         if (!PasswordUtil.matches(request.getPassword(), user.getSalt(), user.getPassword())) {
-            throw new BusinessException("用户名或密码错误");
+            throw new BusinessException("Invalid username or password");
         }
+
         StpUtil.login(user.getId(), userType.getCode());
         StpUtil.getSession().set("userType", userType.getCode());
         return buildLoginResponse(user);
@@ -44,22 +51,25 @@ public class UserServiceImpl implements UserService {
     @Override
     public LoginResponse register(RegisterRequest request) {
         validateCredentials(request.getUsername(), request.getPassword());
+
         UserType userType = UserType.fromCode(request.getUserType());
         if (userType == null || userType == UserType.ADMIN) {
-            throw new BusinessException("当前仅支持游客或经营者注册");
+            throw new BusinessException("Only visitor or operator can register");
         }
         if (userMapper.selectByUsernameAndType(request.getUsername(), userType.getCode()) != null) {
-            throw new BusinessException("当前账号已存在");
+            throw new BusinessException("Account already exists");
         }
+
         String salt = RandomUtil.randomString(6);
         User user = new User();
         user.setUsername(request.getUsername());
         user.setSalt(salt);
         user.setDisplayName(Optional.ofNullable(request.getDisplayName()).orElse(request.getUsername()));
         user.setUserType(userType.getCode());
-        user.setStatus("ACTIVE");
+        user.setStatus(STATUS_ACTIVE);
         user.setPassword(PasswordUtil.hashWithSalt(request.getPassword(), salt));
         userMapper.insertUser(user);
+
         StpUtil.login(user.getId(), userType.getCode());
         StpUtil.getSession().set("userType", userType.getCode());
         return buildLoginResponse(user);
@@ -70,23 +80,24 @@ public class UserServiceImpl implements UserService {
         StpUtil.checkLogin();
         User user = userMapper.selectById(StpUtil.getLoginIdAsLong());
         if (user == null) {
-            throw new BusinessException("当前登录用户不存在");
+            throw new BusinessException("Current user not found");
         }
+        ensureUserActive(user);
         return buildLoginResponse(user);
     }
 
     private void validateCredentials(String username, String password) {
         if (username == null || username.trim().isEmpty()) {
-            throw new BusinessException("账号不能为空");
+            throw new BusinessException("Username is required");
         }
         if (!isValidAccount(username)) {
-            throw new BusinessException("账号只能包含字母、数字和特定符号");
+            throw new BusinessException("Username contains unsupported characters");
         }
         if (password == null || password.length() < 6) {
-            throw new BusinessException("密码长度不能少于6位");
+            throw new BusinessException("Password length must be >= 6");
         }
         if (!isValidPassword(password)) {
-            throw new BusinessException("密码只能包含字母、数字和特定符号");
+            throw new BusinessException("Password contains unsupported characters");
         }
     }
 
@@ -98,6 +109,12 @@ public class UserServiceImpl implements UserService {
         return password != null
                 && password.length() >= 6
                 && password.matches("^[a-zA-Z0-9!@#$%^&*()_+\\-=\\[\\]{}|;':\",./<>?`~]*$");
+    }
+
+    private void ensureUserActive(User user) {
+        if (!STATUS_ACTIVE.equalsIgnoreCase(user.getStatus())) {
+            throw new BusinessException("Account has been disabled");
+        }
     }
 
     private LoginResponse buildLoginResponse(User user) {
@@ -113,3 +130,4 @@ public class UserServiceImpl implements UserService {
         return response;
     }
 }
+

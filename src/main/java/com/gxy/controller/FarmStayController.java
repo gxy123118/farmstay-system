@@ -5,6 +5,8 @@ import cn.dev33.satoken.annotation.SaCheckRole;
 import com.gxy.common.ApiResponse;
 import com.gxy.common.PageResponse;
 import com.gxy.model.dto.FarmStayRequest;
+import com.gxy.model.dto.FarmStayResourceSaveRequest;
+import com.gxy.model.dto.FarmStayResourceSaveResponse;
 import com.gxy.model.dto.FarmStayResponse;
 import com.gxy.service.FarmStayService;
 import lombok.RequiredArgsConstructor;
@@ -76,6 +78,22 @@ public class FarmStayController {
     @PutMapping("/{id}")
     public ApiResponse<FarmStayResponse> update(@PathVariable Long id, @Valid @RequestBody FarmStayRequest request) {
         return ApiResponse.ok(farmStayService.update(id, request));
+    }
+
+    @PutMapping("/{id}/resources")
+    public ApiResponse<FarmStayResourceSaveResponse> saveResources(@PathVariable Long id,
+                                                                   @Valid @RequestBody FarmStayResourceSaveRequest request) {
+        return ApiResponse.ok(farmStayService.saveResources(id, request));
+    }
+
+    @PostMapping("/{id}/offline")
+    public ApiResponse<FarmStayResponse> offline(@PathVariable Long id) {
+        return ApiResponse.ok(farmStayService.offline(id));
+    }
+
+    @PostMapping("/{id}/publish")
+    public ApiResponse<FarmStayResponse> publish(@PathVariable Long id) {
+        return ApiResponse.ok(farmStayService.publish(id));
     }
 
     /**

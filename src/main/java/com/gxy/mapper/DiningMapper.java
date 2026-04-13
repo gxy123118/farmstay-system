@@ -1,6 +1,7 @@
 package com.gxy.mapper;
 
 import com.gxy.model.entity.DiningItem;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -27,6 +28,12 @@ public interface DiningMapper {
     int insert(DiningItem item);
 
     @Update("UPDATE farmstay_dining SET name = #{name}, description = #{description}, price = #{price}, " +
-            "cover_image = #{coverImage}, tags = #{tags}, status = #{status}, updated_at = NOW() WHERE id = #{id}")
+            "cover_image = #{coverImage}, tags = #{tags}, status = #{status}, updated_at = NOW() WHERE id = #{id} AND farm_stay_id = #{farmStayId}")
     int update(DiningItem item);
+
+    @Delete("DELETE FROM farmstay_dining WHERE id = #{id} AND farm_stay_id = #{farmStayId}")
+    int deleteByIdAndFarmStay(@Param("id") Long id, @Param("farmStayId") Long farmStayId);
+
+    @Delete("DELETE FROM farmstay_dining WHERE farm_stay_id = #{farmStayId}")
+    int deleteByFarmStayId(@Param("farmStayId") Long farmStayId);
 }

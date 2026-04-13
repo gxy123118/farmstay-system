@@ -1,5 +1,6 @@
 package com.gxy.service.impl;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.gxy.common.PageResponse;
 import com.gxy.common.auth.AuthGuard;
 import com.gxy.common.exception.BusinessException;
@@ -73,6 +74,9 @@ public class AdminConsoleServiceImpl implements AdminConsoleService {
         }
         if (userMapper.updateStatus(userId, normalizedStatus) <= 0) {
             throw new BusinessException("用户状态更新失败");
+        }
+        if (STATUS_DISABLED.equals(normalizedStatus)) {
+            StpUtil.logout(userId);
         }
         User latest = userMapper.selectById(userId);
         AdminUserResponse response = new AdminUserResponse();

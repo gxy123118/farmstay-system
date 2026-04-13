@@ -427,3 +427,115 @@
 - `refundRate`
 - `farmStayCount`
 - `activeOperatorCount`
+
+## 9. Operator Unified Save (New)
+
+### 9.1 Save Farmstay Edit Page In One Call
+
+`PUT /api/farmstays/{id}/resources`
+
+Purpose:
+- Operator submits all edit-page data in one request.
+- Backend updates farmstay base info and syncs `room_type`, `farmstay_dining`, `farmstay_activity` in a single transaction.
+
+Request body (example):
+```json
+{
+  "name": "山谷农庄",
+  "city": "成都",
+  "address": "都江堰某村",
+  "description": "亲子农庄",
+  "priceRange": "¥268-¥588",
+  "priceLevel": "standard",
+  "coverImage": "https://...",
+  "contactPhone": "13800000000",
+  "tags": "亲子,露营",
+  "rooms": [
+    {
+      "id": 12,
+      "name": "山景双床房",
+      "description": "安静",
+      "bedType": "双床",
+      "maxGuests": 2,
+      "price": 188,
+      "stock": 3,
+      "tags": "山景",
+      "status": "ACTIVE"
+    }
+  ],
+  "dinings": [
+    {
+      "id": 21,
+      "name": "农家早餐",
+      "description": "本地食材",
+      "price": 28,
+      "tags": "早餐",
+      "status": "ACTIVE"
+    }
+  ],
+  "activities": [
+    {
+      "id": 31,
+      "name": "手作体验",
+      "description": "周末开放",
+      "schedule": "每周六 16:00",
+      "capacity": 12,
+      "price": 68,
+      "tags": "亲子",
+      "status": "ACTIVE"
+    }
+  ]
+}
+```
+
+Sync rule:
+- `id` missing: create.
+- `id` present and belongs to current farmstay: update.
+- Existing rows not present in submitted list: delete.
+
+Response:
+- Returns latest full snapshot:
+  - `farmStay`
+  - `rooms`
+  - `dinings`
+  - `activities`
+
+### 9.2 Offline Farmstay (Status Only)
+
+`POST /api/farmstays/{id}/offline`
+
+Purpose:
+- Used by the edit-page `下架店铺` action.
+- Only updates farmstay status to `OFFLINE`.
+- Does not delete child data.
+
+### 9.3 Publish Farmstay (Status Only)
+
+`POST /api/farmstays/{id}/publish`
+
+Purpose:
+- Used by the edit-page `上架店铺` action when current status is `OFFLINE`.
+- Only updates farmstay status to `PUBLISHED`.
+
+## 10. Admin User Status Enforcement (2026-04-13)
+
+### 10.1 Login Blocking
+
+`POST /api/auth/login`
+
+Rule:
+- If `user.status != ACTIVE`, login is rejected with `Account has been disabled`.
+
+### 10.2 Runtime Request Blocking
+
+Rule:
+- For authenticated non-public APIs, backend re-checks current user status.
+- If account is disabled (or user record missing), current token is logged out and request is rejected with `Account has been disabled`.
+
+### 10.3 Force Logout On Disable
+
+`PUT /api/admin/users/{userId}/status`
+
+Rule:
+- When admin sets status to `DISABLED`, backend immediately force-logs-out that user id.
+- Existing sessions become invalid; user must be re-enabled before next login.

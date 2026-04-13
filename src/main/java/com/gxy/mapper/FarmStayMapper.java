@@ -1,11 +1,7 @@
 package com.gxy.mapper;
 
 import com.gxy.model.entity.FarmStay;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 
@@ -76,4 +72,7 @@ public interface FarmStayMapper {
 
     @Update("UPDATE farmstay SET status = #{status}, updated_at = NOW() WHERE id = #{id} AND owner_id = #{ownerId}")
     int updateStatusByOwner(@Param("id") Long id, @Param("ownerId") Long ownerId, @Param("status") String status);
+
+    @Delete("DELETE FROM farmstay WHERE id = #{id} AND owner_id = #{ownerId}")
+    int deleteByIdAndOwner(@Param("id") Long id, @Param("ownerId") Long ownerId);
 }

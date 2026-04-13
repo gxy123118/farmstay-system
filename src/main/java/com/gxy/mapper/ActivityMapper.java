@@ -1,6 +1,7 @@
 package com.gxy.mapper;
 
 import com.gxy.model.entity.ActivityItem;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -28,6 +29,12 @@ public interface ActivityMapper {
 
     @Update("UPDATE farmstay_activity SET name = #{name}, description = #{description}, schedule = #{schedule}, " +
             "capacity = #{capacity}, price = #{price}, cover_image = #{coverImage}, tags = #{tags}, status = #{status}, updated_at = NOW() " +
-            "WHERE id = #{id}")
+            "WHERE id = #{id} AND farm_stay_id = #{farmStayId}")
     int update(ActivityItem item);
+
+    @Delete("DELETE FROM farmstay_activity WHERE id = #{id} AND farm_stay_id = #{farmStayId}")
+    int deleteByIdAndFarmStay(@Param("id") Long id, @Param("farmStayId") Long farmStayId);
+
+    @Delete("DELETE FROM farmstay_activity WHERE farm_stay_id = #{farmStayId}")
+    int deleteByFarmStayId(@Param("farmStayId") Long farmStayId);
 }

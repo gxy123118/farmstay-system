@@ -27,6 +27,8 @@ logging:
   level:
     com.gxy: debug
 app:
+  upload:
+    base-dir: uploads
   payment:
     alipay:
       enabled: true

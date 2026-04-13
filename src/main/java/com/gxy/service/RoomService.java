@@ -12,4 +12,6 @@ public interface RoomService {
     RoomResponse create(RoomRequest request);
 
     RoomResponse update(Long id, RoomRequest request);
+
+    boolean delete(Long id);
 }

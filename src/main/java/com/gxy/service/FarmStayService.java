@@ -2,6 +2,8 @@ package com.gxy.service;
 
 import com.gxy.common.PageResponse;
 import com.gxy.model.dto.FarmStayRequest;
+import com.gxy.model.dto.FarmStayResourceSaveRequest;
+import com.gxy.model.dto.FarmStayResourceSaveResponse;
 import com.gxy.model.dto.FarmStayResponse;
 
 import java.util.List;
@@ -32,6 +34,21 @@ public interface FarmStayService {
      * 经营者更新自家农家乐信息
      */
     FarmStayResponse update(Long id, FarmStayRequest request);
+
+    /**
+     * 缁忚惀鑰呬笅鏋跺簵閾猴紝浠呮洿鏂扮姸鎬?
+     */
+    FarmStayResponse offline(Long id);
+
+    /**
+     * 缁忚惀鑰呬笂鏋跺簵閾猴紝浠呮洿鏂扮姸鎬?
+     */
+    FarmStayResponse publish(Long id);
+
+    /**
+     * 缁忚惀鑰呬竴娆℃€ф彁浜ゆ爣鍑嗗寲缂栬緫椤甸潰鍏ㄩ儴鏁版嵁
+     */
+    FarmStayResourceSaveResponse saveResources(Long id, FarmStayResourceSaveRequest request);
 
     /**
      * 经营者删除/下架农家乐

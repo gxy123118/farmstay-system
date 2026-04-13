@@ -46,4 +46,9 @@ public class RoomController {
     public ApiResponse<RoomResponse> update(@PathVariable Long id, @Valid @RequestBody RoomRequest request) {
         return ApiResponse.ok(roomService.update(id, request));
     }
+
+    @DeleteMapping("/{id}")
+    public ApiResponse<Boolean> delete(@PathVariable Long id) {
+        return ApiResponse.ok(roomService.delete(id));
+    }
 }

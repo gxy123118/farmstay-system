@@ -64,6 +64,21 @@ public class RoomServiceImpl implements RoomService {
         return toResponse(roomType);
     }
 
+    @Override
+    public boolean delete(Long id) {
+        AuthGuard.enforceOperator();
+        RoomType exists = roomTypeMapper.selectById(id);
+        if (exists == null) {
+            throw new BusinessException("Room not found");
+        }
+        ensureOwner(exists.getFarmStayId());
+        int changed = roomTypeMapper.deleteByIdAndFarmStay(id, exists.getFarmStayId());
+        if (changed == 0) {
+            throw new BusinessException("Room delete failed");
+        }
+        return true;
+    }
+
     private RoomType buildRoomType(RoomRequest request) {
         RoomType roomType = new RoomType();
         roomType.setFarmStayId(request.getFarmStayId());
